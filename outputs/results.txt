@@ -1,0 +1,30 @@
+MARKOWITZ PORTFOLIO OPTIMIZATION — RESULTS
+==================================================
+
+MINIMUM VARIANCE PORTFOLIO
+  Return:     20.61%
+  Volatility: 18.50%
+  Sharpe:     0.90
+  Weights:
+    AAPL     9.55%
+    MSFT     4.76%
+    JPM      5.44%
+    JNJ      5.62%
+    XOM      30.62%
+    AMZN     7.49%
+    GOOGL    21.73%
+    BRK-B    14.80%
+
+MAXIMUM SHARPE PORTFOLIO
+  Return:     29.60%
+  Volatility: 24.87%
+  Sharpe:     1.03
+  Weights:
+    AAPL     43.33%
+    MSFT     0.00%
+    JPM      0.00%
+    JNJ      25.70%
+    XOM      2.31%
+    AMZN     20.50%
+    GOOGL    7.27%
+    BRK-B    0.90%
