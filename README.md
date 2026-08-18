@@ -84,7 +84,7 @@ portfolio_optimizer/
 
 ## Installation
 ```bash
-git clone https://github.com/your-username/portfolio-optimizer.git
+git clone https://github.com/rodrisantana/portfolio-optimizer.git
 cd portfolio-optimizer
 pip install -r requirements.txt
 ```
