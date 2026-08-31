@@ -8,7 +8,7 @@ class DataFetcher:
     """
 
     def __init__(self, tickers: list[str], start: str, end: str): # Initialize with list of tickers and date range.
-        self.tickers = tickers # List of stock tickers to fetch data for. ["AAPL", "MSFT"]
+        self.tickers = tickers # List of stock tickers to fetch data for. ["AAPL", "MSFT", ...]
         self.start = start
         self.end = end
         self.prices = None 
@@ -23,7 +23,25 @@ class DataFetcher:
             auto_adjust=True,
             progress=False,
         )
-        self.prices = raw["Close"].dropna()  # Keep only the 'Close' price and drop any rows with missing values.
+        close = raw["Close"]
+        
+        # yfinance returns columns sorted alphabetically, NOT in the order requested.
+        # Reindexing explicitly is what guarantees weights map to the right asset.
+        missing = [ticket for ticket in self.tickers if ticket not in close.columns]
+        if missing:
+            raise ValueError(f"No data returned for: {missing}")
+        close = close[self.tickers]
+        
+        before = len(close)
+        self.prices = close.dropna()
+        dropped = before - len(self.prices)
+        if dropped > 0:
+            print(f"Warning: Dropped {dropped} of {before} rows with missing data.")
+        if self.prices.empty:
+            raise ValueError("No valid price data after dropping missing rows.")
+
+
+
         return self.prices
 
     def get_returns(self) -> pd.DataFrame:

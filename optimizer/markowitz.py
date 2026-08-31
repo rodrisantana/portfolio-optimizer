@@ -9,32 +9,27 @@ class MarkowitzOptimizer:
     """
 
     def __init__(self, returns, risk_free_rate: float = 0.02):
-        # Store daily returns DataFrame for reference
-        self.returns = returns
+        self.returns = returns # Store daily returns DataFrame for reference
+        
+        self.mu = returns.mean().values # mu: expected daily return for each asset (vector of means)
 
-        # mu: expected daily return for each asset (vector of means)
-        self.mu = returns.mean().values
+        self.covariance = returns.cov().values # cov: covariance matrix between all asset pairs (n x n matrix)
 
-        # cov: covariance matrix between all asset pairs (n x n matrix)
-        self.cov = returns.cov().values
+        self.num_assets = len(self.mu) # number of assets in the portfolio
 
-        # number of assets in the portfolio
-        self.n = len(self.mu)
-
-        # convert annual risk-free rate to daily (252 trading days per year)
-        self.risk_free_rate = risk_free_rate / 252
+        self.risk_free_rate = risk_free_rate / 252 # convert annual risk-free rate to daily (252 trading days per year)
 
     def portfolio_performance(self, weights: np.ndarray) -> tuple:
-        # Annualized return: r_p = w^T * mu * 252
+        # Annualized return: return_p = weights^T * mu * 252
         ret = np.dot(weights, self.mu) * 252
 
-        # Annualized volatility: sigma_p = sqrt(w^T * Sigma * w * 252)
-        vol = np.sqrt(np.dot(weights, np.dot(self.cov, weights)) * 252)
+        # Annualized volatility: sigma_p = sqrt(weights^T * Sigma * weights * 252)
+        volatility = np.sqrt(np.dot(weights, np.dot(self.covariance, weights)) * 252)
 
         # Sharpe ratio: excess return per unit of risk
-        sharpe = (ret - self.risk_free_rate * 252) / vol
+        sharpe = (ret - self.risk_free_rate * 252) / volatility
 
-        return ret, vol, sharpe
+        return ret, volatility, sharpe
 
     def _min_variance_for_target(self, target_return: float) -> np.ndarray:
         # Constraint 1: weights must sum to 1 (fully invested portfolio)
@@ -45,15 +40,15 @@ class MarkowitzOptimizer:
         ]
 
         # Bounds: no short selling, each weight between 0 and 1
-        bounds = [(0, 1)] * self.n
+        bounds = [(0, 1)] * self.num_assets
 
         # Initial guess: equal weight portfolio
-        w0 = np.ones(self.n) / self.n
+        w0 = np.ones(self.num_assets) / self.num_assets
 
         # Minimize portfolio variance w^T * Sigma * w subject to constraints
         # SLSQP = Sequential Least Squares Programming, handles equality constraints
         result = minimize(
-            lambda w: np.dot(w, np.dot(self.cov, w)),
+            lambda w: np.dot(w, np.dot(self.covariance, w)),
             w0,
             method="SLSQP",
             bounds=bounds,
@@ -82,14 +77,14 @@ class MarkowitzOptimizer:
 
     def min_variance_portfolio(self) -> dict:
         constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
-        bounds = [(0, 1)] * self.n
+        bounds = [(0, 1)] * self.num_assets
         best_result = None
 
         # Run optimizer from multiple random starting points to avoid local minima
         for _ in range(20):
-            w0 = np.random.dirichlet(np.ones(self.n))
+            w0 = np.random.dirichlet(np.ones(self.num_assets))
             result = minimize(
-                lambda w: np.dot(w, np.dot(self.cov, w)),
+                lambda w: np.dot(w, np.dot(self.covariance, w)),
                 w0,
                 method="SLSQP",
                 bounds=bounds,
@@ -107,8 +102,8 @@ class MarkowitzOptimizer:
         # Maximize Sharpe ratio = minimize negative Sharpe ratio
         # This is the tangency portfolio: optimal combination of risky assets
         constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
-        bounds = [(0, 1)] * self.n
-        w0 = np.ones(self.n) / self.n
+        bounds = [(0, 1)] * self.num_assets
+        w0 = np.ones(self.num_assets) / self.num_assets
 
         result = minimize(
             lambda w: -self.portfolio_performance(w)[2],  # negative Sharpe
