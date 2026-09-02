@@ -8,16 +8,14 @@ class Plotter:
     Visualizes the efficient frontier and key portfolios.
     """
 
-    def __init__(self, tickers: list[str], output_dir: str = "outputs"):
-        self.tickers = tickers
-        # Create output directory if it doesn't exist
+    def __init__(self, output_dir: str = "outputs"):
         os.makedirs(output_dir, exist_ok=True)
         self.output_dir = output_dir
 
     def plot_efficient_frontier(self, frontier: list, min_var: dict, max_sharpe: dict) -> None:
-        returns = [p[0] for p in frontier]
-        volatilities = [p[1] for p in frontier]
-        sharpes = [p[2] for p in frontier]
+        volatilities = [p["volatility"] for p in frontier]
+        returns      = [p["return"] for p in frontier]
+        sharpes      = [p["sharpe"] for p in frontier]
 
         fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -49,11 +47,11 @@ class Plotter:
         plt.savefig(os.path.join(self.output_dir, "efficient_frontier.png"), dpi=150)
 
     def plot_weights(self, portfolio: dict, title: str) -> None:
-        weights = portfolio["weights"]
+        weights = portfolio["weights"] 
         fig, ax = plt.subplots(figsize=(8, 5))
 
-        colors = plt.cm.viridis(np.linspace(0.2, 0.8, len(self.tickers)))
-        ax.bar(self.tickers, weights, color=colors)
+        colors = plt.cm.viridis(np.linspace(0.2, 0.8, len(weights)))  # Use a colormap for better aesthetics
+        ax.bar(weights.index, weights.values, color=colors)
 
         ax.set_xlabel("Asset")
         ax.set_ylabel("Weight")

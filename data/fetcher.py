@@ -1,3 +1,5 @@
+import os
+
 import yfinance as yf # Yahoo Finance API for fetching historical price data.
 import pandas as pd # Pandas for data manipulation and analysis.
 
@@ -13,35 +15,48 @@ class DataFetcher:
         self.end = end
         self.prices = None 
 
-    # Fetch historical price data for the specified tickers and date range.
-    # The data is auto-adjusted for corporate actions and stored in self.prices.
-    def fetch(self) -> pd.DataFrame:
-        raw = yf.download( 
+    def fetch(self, cache_path: str = "data/prices.csv") -> pd.DataFrame:
+        # Cached prices make the pipeline reproducible: yfinance revises historical
+        # dividend/split adjustment factors, so a fresh download changes the results.
+        if os.path.exists(cache_path):
+            cached = pd.read_csv(cache_path, index_col=0, parse_dates=True)
+            # Guard against a stale cache built for a different universe.
+            if list(cached.columns) != list(self.tickers):
+                raise ValueError(
+                    f"Cache {cache_path} holds {list(cached.columns)}, "
+                    f"but TICKERS is {self.tickers}. Delete the cache to refresh."
+                )
+            self.prices = cached
+            print(f"Loaded cached prices from {cache_path} ({len(cached)} rows)")
+            return self.prices
+
+        raw = yf.download(
             tickers=self.tickers,
             start=self.start,
             end=self.end,
-            auto_adjust=True,
+            auto_adjust=True,   # adjusts for BOTH splits and dividends -> total returns
             progress=False,
         )
         close = raw["Close"]
-        
-        # yfinance returns columns sorted alphabetically, NOT in the order requested.
-        # Reindexing explicitly is what guarantees weights map to the right asset.
-        missing = [ticket for ticket in self.tickers if ticket not in close.columns]
+        if isinstance(close, pd.Series):          # single-ticker edge case
+            close = close.to_frame(self.tickers[0])
+
+        # yfinance sorts columns alphabetically, NOT in the order requested.
+        missing = [t for t in self.tickers if t not in close.columns]
         if missing:
             raise ValueError(f"No data returned for: {missing}")
         close = close[self.tickers]
-        
+
         before = len(close)
         self.prices = close.dropna()
-        dropped = before - len(self.prices)
-        if dropped > 0:
-            print(f"Warning: Dropped {dropped} of {before} rows with missing data.")
+        if before - len(self.prices):
+            print(f"WARNING: dropped {before - len(self.prices)} of {before} rows")
         if self.prices.empty:
-            raise ValueError("No valid price data after dropping missing rows.")
+            raise ValueError("No overlapping data across tickers.")
 
-
-
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+        self.prices.to_csv(cache_path)
+        print(f"Cached prices to {cache_path}")
         return self.prices
 
     def get_returns(self) -> pd.DataFrame:
