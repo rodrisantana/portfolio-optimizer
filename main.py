@@ -8,7 +8,10 @@ from visualization.plotter import Plotter
 TICKERS = ["AAPL", "MSFT", "JPM", "JNJ", "XOM", "AMZN", "GOOGL", "BRK-B"]
 START_DATE = "2019-01-01"
 END_DATE = "2026-01-01"
-RISK_FREE_RATE = 0.04
+
+# Average 3M US T-bill over 2019-2025 (~2.5%), NOT today's rate.
+# The tangency portfolio's composition depends on this input.
+RISK_FREE_RATE = 0.025
 OUTPUT_DIR = "outputs"
 
 
@@ -16,27 +19,27 @@ def save_results(min_var: dict, max_sharpe: dict, tickers: list, output_dir: str
     os.makedirs(output_dir, exist_ok=True)
     filepath = os.path.join(output_dir, "results.txt")
 
-    with open(filepath, "w") as f:
-        f.write("MARKOWITZ PORTFOLIO OPTIMIZATION — RESULTS\n")
-        f.write("=" * 50 + "\n\n")
+    with open(filepath, "w", encoding="utf-8") as file:
+        file.write("MARKOWITZ PORTFOLIO OPTIMIZATION — RESULTS\n")
+        file.write("=" * 50 + "\n\n")
 
-        f.write("MINIMUM VARIANCE PORTFOLIO\n")
-        f.write(f"  Return:     {min_var['return']:.2%}\n")
-        f.write(f"  Volatility: {min_var['volatility']:.2%}\n")
-        f.write(f"  Sharpe:     {min_var['sharpe']:.2f}\n")
-        f.write("  Weights:\n")
-        for ticker, w in zip(tickers, min_var["weights"]):
-            f.write(f"    {ticker:<8} {w:.2%}\n")
+        file.write("MINIMUM VARIANCE PORTFOLIO\n")
+        file.write(f"  Return:     {min_var['return']:.2%}\n")
+        file.write(f"  Volatility: {min_var['volatility']:.2%}\n")
+        file.write(f"  Sharpe:     {min_var['sharpe']:.2f}\n")
+        file.write("  Weights:\n")
+        for ticker, weight in min_var["weights"].items():
+            file.write(f"    {ticker:<8} {weight:.2%}\n")
 
-        f.write("\n")
+        file.write("\n")
 
-        f.write("MAXIMUM SHARPE PORTFOLIO\n")
-        f.write(f"  Return:     {max_sharpe['return']:.2%}\n")
-        f.write(f"  Volatility: {max_sharpe['volatility']:.2%}\n")
-        f.write(f"  Sharpe:     {max_sharpe['sharpe']:.2f}\n")
-        f.write("  Weights:\n")
-        for ticker, w in zip(tickers, max_sharpe["weights"]):
-            f.write(f"    {ticker:<8} {w:.2%}\n")
+        file.write("MAXIMUM SHARPE PORTFOLIO\n")
+        file.write(f"  Return:     {max_sharpe['return']:.2%}\n")
+        file.write(f"  Volatility: {max_sharpe['volatility']:.2%}\n")
+        file.write(f"  Sharpe:     {max_sharpe['sharpe']:.2f}\n")
+        file.write("  Weights:\n")
+        for ticker, weight in max_sharpe["weights"].items():
+            file.write(f"    {ticker:<8} {weight:.2%}\n")
 
     print(f"Results saved to {filepath}")
 
@@ -61,15 +64,15 @@ def main():
     print(f"  Return:     {min_var['return']:.2%}")
     print(f"  Volatility: {min_var['volatility']:.2%}")
     print(f"  Sharpe:     {min_var['sharpe']:.2f}")
-    for ticker, w in zip(TICKERS, min_var["weights"]):
-        print(f"    {ticker:<8} {w:.2%}")
+    for ticker, weight in min_var["weights"].items():
+        print(f"    {ticker:<8} {weight:.2%}")
 
     print("\nMaximum Sharpe Portfolio:")
     print(f"  Return:     {max_sharpe['return']:.2%}")
     print(f"  Volatility: {max_sharpe['volatility']:.2%}")
     print(f"  Sharpe:     {max_sharpe['sharpe']:.2f}")
-    for ticker, w in zip(TICKERS, max_sharpe["weights"]):
-        print(f"    {ticker:<8} {w:.2%}")
+    for ticker, weight in max_sharpe["weights"].items():
+        print(f"    {ticker:<8} {weight:.2%}")
 
     # --- Step 4: Save results to txt ---
     save_results(min_var, max_sharpe, TICKERS, OUTPUT_DIR)
