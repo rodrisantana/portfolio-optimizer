@@ -1,0 +1,19 @@
+{
+  "widgets": {
+    "source": "Yahoo Finance (live)",
+    "catalog_assets": ["EUNL.DE", "IS3N.DE", "IE00B42W4L06", "VGEA.DE", "EUNA.DE", "4GLD.DE"],
+    "base": "EUR",
+    "freq": "weekly",
+    "r_method": "bayes_stein",
+    "c_method": "ledoit_wolf",
+    "rf": 1.5,
+    "max_w": 0.5
+  },
+  "holdings": {
+    "EUNL.DE": {"value": 14200, "cost": 11000},
+    "IS3N.DE": {"value": 2600, "cost": 2400},
+    "VG Small Cap (fund)": {"value": 1800, "cost": 1500},
+    "VGEA.DE": {"value": 2100, "cost": 2300},
+    "4GLD.DE": {"value": 1300, "cost": 900}
+  }
+}
