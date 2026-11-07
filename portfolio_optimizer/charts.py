@@ -317,3 +317,24 @@ def projection_chart(table: pd.DataFrame, real: bool) -> go.Figure:
     fig.update_xaxes(title=_t("Year"), dtick=1 if len(table) <= 20 else 5)
     fig.update_yaxes(tickformat=",.0f")
     return fig
+
+
+def horizon_chart(table: pd.DataFrame) -> go.Figure:
+    """Range of annualised returns by holding period: it narrows as the horizon grows."""
+    x = [f"{h}" for h in table.index]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=x, y=table["Return P90"] - table["Return P10"], base=table["Return P10"],
+                         name=_t("10% to 90%"), marker_color="rgba(42,120,214,0.25)", marker_line_width=0,
+                         hovertemplate="P10 %{base:.1%}<extra></extra>"))
+    fig.add_trace(go.Bar(x=x, y=table["Return P75"] - table["Return P25"], base=table["Return P25"],
+                         name=_t("25% to 75%"), marker_color="rgba(42,120,214,0.55)", marker_line_width=0,
+                         hovertemplate="P25 %{base:.1%}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=x, y=table["Return P50"], mode="markers", name=_t("Median"),
+                             marker=dict(size=11, color=PALETTE[0], line=dict(width=2, color="white")),
+                             hovertemplate=_t("Median") + " %{y:.1%}<extra></extra>"))
+    fig.update_layout(barmode="overlay", bargap=0.35)
+    fig.add_hline(y=0, line=dict(color=MUTED, width=1))
+    fig = _layout(fig, "", 380, pct_y=True)
+    fig.update_xaxes(title=_t("Years invested"), type="category")
+    fig.update_yaxes(title=_t("Annualised return"))
+    return fig

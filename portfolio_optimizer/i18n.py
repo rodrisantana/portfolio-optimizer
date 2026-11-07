@@ -216,7 +216,7 @@ ES: dict[str, str] = {
         "Desactivado: solo se usa el dinero nuevo, no se vende nada y no hay impuestos.",
     "Current value": "Valor actual", "Current weight": "Peso actual", "Target weight": "Peso objetivo",
     "Trade": "Operación", "Value after": "Valor después", "Weight after": "Peso después",
-    "Realised gain": "Plusvalía realizada", "Estimated tax": "Impuesto estimado", "Traspaso eligible": "Traspasable",
+    "Realised gain": "Plusvalía realizada", "Estimated tax": "Impuesto estimado",
     "Distance to target before": "Distancia al objetivo antes", "Distance to target after": "Distancia al objetivo después",
     "Estimated Spanish tax (IRPF)": "IRPF estimado",
     "Tax: savings-base brackets 19% to 30% on realised gains, average-cost method, no loss offsetting. Fund sales are "
@@ -285,6 +285,141 @@ ES: dict[str, str] = {
         "La TIR tiene en cuenta cuándo se hizo cada aportación, así que es la rentabilidad que habrías obtenido de "
         "verdad.",
     "Weights over time": "Pesos a lo largo del tiempo",
+    # ---- search, import / export, accounts, horizons
+    "10% to 90%": "Del 10 % al 90 %", "Account": "Cuenta remunerada", "Deposit": "Depósito",
+    "Pension plan": "Plan de pensiones",
+    "Add cash at a known interest rate. Forecasts use the TAE; the history follows the ECB rate (via the €STR) with "
+    "today's spread, never below zero.":
+        "Añade liquidez a un tipo de interés conocido. Las previsiones usan la TAE; el histórico sigue al tipo del BCE "
+        "(a través del €STR) con el diferencial de hoy, sin bajar nunca de cero.",
+    "Add to the universe": "Añadir a la lista", "Added by search or import": "Añadidos por búsqueda o importación",
+    "Added: {n}": "Añadido: {n}", "Annualised return": "Rentabilidad anualizada",
+    "Columns are detected automatically (ISIN or ticker, name, value, cost, type, TAE). Download a template from the "
+    "My portfolio tab.":
+        "Las columnas se detectan solas (ISIN o ticker, nombre, valor, coste, tipo, TAE). Tienes una plantilla en la "
+        "pestaña Mi cartera.",
+    "Could not import the file: {err}": "No se pudo importar el archivo: {err}",
+    "Download an import template": "Descargar plantilla de importación",
+    "Download portfolio (CSV)": "Descargar cartera (CSV)", "Download portfolio (Excel)": "Descargar cartera (Excel)",
+    "Export your positions to CSV or Excel, edit them anywhere and import them again from the sidebar. Works with any "
+    "bank or broker: only an ISIN or ticker (or the name) and a value are needed.":
+        "Exporta tus posiciones a CSV o Excel, edítalas donde quieras y vuelve a importarlas desde la barra lateral. "
+        "Sirve para cualquier banco o bróker: basta con un ISIN o ticker (o el nombre) y un importe.",
+    "Factsheet": "Ficha", "open": "abrir", "Import a portfolio (CSV or Excel)": "Importar una cartera (CSV o Excel)",
+    "Import and export": "Importar y exportar", "Imported {n} positions.": "Importadas {n} posiciones.",
+    "Name, ISIN or ticker": "Nombre, ISIN o ticker",
+    "Not found (add them as your own fund): {m}": "No encontrados (añádelos como fondo propio): {m}",
+    "Nothing with price history found. Try another name or add it as your own fund.":
+        "No hay resultados con histórico de precios. Prueba con otro nombre o añádelo como fondo propio.",
+    "Reading the portfolio and finding each product...": "Leyendo la cartera y buscando cada producto...",
+    "Remunerated accounts and deposits": "Cuentas remuneradas y depósitos", "Results": "Resultados",
+    "Return and money by horizon": "Rentabilidad y dinero por plazo", "Search": "Buscar",
+    "Search failed: {err}": "La búsqueda falló: {err}", "Search funds, ETFs and shares": "Buscar fondos, ETFs y acciones",
+    "Searches Yahoo Finance by name, ISIN or ticker and keeps only products with price history. The classification is "
+    "guessed and can be edited in the instrument table.":
+        "Busca en Yahoo Finance por nombre, ISIN o ticker y solo muestra productos con histórico de precios. La "
+        "clasificación se deduce del nombre y puedes corregirla en la tabla de instrumentos.",
+    "Searching...": "Buscando...",
+    "The longer you stay invested, the narrower the range of annualised returns. Money columns include your "
+    "contributions.":
+        "Cuanto más tiempo inviertes, más se estrecha el abanico de rentabilidades anualizadas. Las columnas de dinero "
+        "incluyen tus aportaciones.",
+    "Years invested": "Años invertido",
+    "Your best account pays {r}, so it is used as the risk-free rate: risky assets must beat it.":
+        "Tu mejor cuenta paga un {r}, así que se usa como tipo libre de riesgo: lo que tenga riesgo debe superarla.",
+    "since": "desde", "years": "años",
+    "Conservative: money market and short-term bonds": "Conservadora: monetarios y renta fija a corto",
+    "MyInvestor funds": "Fondos de MyInvestor",
+    "Return P10": "Rentab. P10", "Return P50": "Rentab. mediana", "Return P90": "Rentab. P90",
+    "Probability of a loss": "Probabilidad de pérdida", "Money P10": "Dinero P10", "Money P50": "Dinero mediano",
+    "Money P90": "Dinero P90", "Tax-free switch": "Sin tributar al mover",
+    "Fixed income · Corporate": "Renta fija · Corporativa", "Fixed income · Short-term": "Renta fija · Corto plazo",
+    "Fixed income · Income / high yield": "Renta fija · Income / high yield",
+    "Equal-weight S&P 500; backfilled with the cap-weighted index.":
+        "S&P 500 equiponderado; los años anteriores se rellenan con el índice ponderado por capitalización.",
+    "Pension plan: contributions deduct from taxable income (up to 1,500 EUR a year) but the money is locked until "
+    "retirement.":
+        "Plan de pensiones: las aportaciones reducen la base imponible (hasta 1.500 € al año), pero el dinero queda "
+        "bloqueado hasta la jubilación.",
+    "Classified automatically and TER estimated: check them in the instrument table.":
+        "Clasificado automáticamente y con TER estimado: revísalos en la tabla de instrumentos.",
+    # ---- explanations
+    "1 = they move together, 0 = unrelated, negative = they tend to move in opposite directions. Mixing assets with "
+    "low correlation lowers the risk of the whole.":
+        "1 = se mueven igual, 0 = no tienen relación, negativo = tienden a moverse al revés. Combinar activos poco "
+        "correlacionados reduce el riesgo del conjunto.",
+    "2.2% is J.P. Morgan's long-term euro inflation assumption.":
+        "2,2 % es la inflación a largo plazo del euro que asume J.P. Morgan.",
+    "Compound %": "Compuesta %", "Mean %": "Media %", "Source": "Fuente", "Set of assumptions": "Conjunto de hipótesis",
+    "J.P. Morgan LTCMA 2027 (EUR)": "J.P. Morgan LTCMA 2027 (EUR)", "Conservative (own)": "Conservadora (propia)",
+    "Each point is a portfolio: further right means more risk (volatility), higher means more expected return. The "
+    "black curve is the efficient frontier: the best return you can expect for each level of risk. Diamonds are the "
+    "strategies; the star is your portfolio. Grey dots are random portfolios, to show how much worse a careless mix "
+    "can be.":
+        "Cada punto es una cartera: más a la derecha, más riesgo (volatilidad); más arriba, más rentabilidad esperada. "
+        "La curva negra es la frontera eficiente, es decir, lo máximo que puedes esperar ganar para cada nivel de "
+        "riesgo. Los rombos son las estrategias y la estrella tu cartera. Los puntos grises son carteras al azar, para "
+        "ver cuánto peor puede salir una mezcla hecha sin criterio.",
+    "Expected annual returns in EUR for the next 10-15 years, before fees. By default they are the euro figures of "
+    "J.P. Morgan's 2027 Long-Term Capital Market Assumptions; rows marked 'own' are not in the report. The optimiser "
+    "and the Monte Carlo use the mean return; the compound return is what a buy-and-hold investor typically earns per "
+    "year. Each asset gets the figure of its class and region minus its TER (plus alpha for active funds). "
+    "Volatilities and correlations come from the data.":
+        "Rentabilidades anuales esperadas en euros para los próximos 10 a 15 años, antes de comisiones. Por defecto "
+        "son las cifras en euros de las Long-Term Capital Market Assumptions 2027 de J.P. Morgan; las filas marcadas "
+        "'own' no están en el informe y son hipótesis propias. El optimizador y el Monte Carlo usan la rentabilidad "
+        "media; la compuesta es la que suele obtener al año quien compra y mantiene. Cada activo recibe la cifra de "
+        "su clase y región menos su TER (más el alfa si es un fondo activo). Volatilidades y correlaciones salen de "
+        "los datos.",
+    "Expected return of euro cash: 2.6% a year in J.P. Morgan's 2027 assumptions.":
+        "Rentabilidad esperada de la liquidez en euros: 2,6 % anual según las previsiones 2027 de J.P. Morgan.",
+    "Falls from the peak (drawdowns)": "Caídas desde máximos (drawdowns)",
+    "For each holding period, the bar shows the range of average yearly returns across scenarios: light = 80% of "
+    "cases, dark = the middle half, dot = median. Over one year almost anything can happen; over 20 years the range "
+    "narrows a lot. Money columns include your contributions.":
+        "Para cada plazo, la barra muestra entre qué valores queda la rentabilidad media anual en los distintos "
+        "escenarios: claro = el 80 % de los casos, oscuro = la mitad central, punto = la mediana. En un año puede "
+        "pasar casi cualquier cosa; en 20 años el abanico se estrecha mucho. Las columnas de dinero incluyen tus "
+        "aportaciones.",
+    "Glossary": "Glosario", "Growth of 100 invested": "Evolución de 100 € invertidos",
+    "How each strategy would really have done if you had followed it, deciding every rebalance with only the "
+    "information available at the time.":
+        "Cómo habría ido de verdad cada estrategia si la hubieras seguido, decidiendo cada rebalanceo solo con la "
+        "información disponible en ese momento.",
+    "How far each asset was below its previous high at every moment. -30% means it had lost 30% from its best value "
+    "so far; the line returns to 0% when the loss is fully recovered. Deep and long dips are what test an investor's "
+    "nerves.":
+        "Cuánto estaba cada activo por debajo de su máximo anterior en cada momento. -30 % significa que había perdido "
+        "un 30 % desde su mejor valor hasta entonces; la línea vuelve a 0 % cuando la pérdida se ha recuperado del "
+        "todo. Las caídas profundas y largas son las que ponen a prueba los nervios de un inversor.",
+    "How the final value is distributed across all scenarios. The further right the tail, the more the result "
+    "depends on luck.":
+        "Cómo se reparte el valor final entre todos los escenarios. Cuanto más larga la cola de la derecha, más "
+        "depende el resultado de la suerte.",
+    "How the strategy changed its allocation at each rebalance.":
+        "Cómo cambió la estrategia su reparto en cada rebalanceo.",
+    "Return of each asset in each calendar year (the first year may be partial). Blue = gain, red = loss.":
+        "Rentabilidad de cada activo en cada año natural (el primero puede estar incompleto). Azul = ganancia, rojo = "
+        "pérdida.",
+    "Start here": "Empieza aquí", "The strategies, explained": "Las estrategias, explicadas",
+    "The typical (median) path: half of the scenarios end above it and half below. It grows at {g} a year, less than "
+    "the {m} average return, because ups and downs eat into compound growth (volatility drag).":
+        "La senda típica (mediana): la mitad de los escenarios acaba por encima y la otra mitad por debajo. Crece al "
+        "{g} anual, menos que la rentabilidad media del {m}, porque las subidas y bajadas restan crecimiento "
+        "compuesto (el llamado lastre de la volatilidad).",
+    "The worst moments of each strategy: how much it was below its previous high.":
+        "Los peores momentos de cada estrategia: cuánto estaba por debajo de su máximo anterior.",
+    "Thousands of possible futures. The dark band holds the middle half of the scenarios and the light band 90% of "
+    "them; the blue line is the median and the dotted line the money you put in. Thin grey lines are individual "
+    "scenarios: notice how bumpy each one is.":
+        "Miles de futuros posibles. La banda oscura recoge la mitad central de los escenarios y la clara el 90 %; la "
+        "línea azul es la mediana y la punteada el dinero que aportas. Las líneas grises finas son escenarios "
+        "concretos: fíjate en lo irregular que es cada uno.",
+    "What 100 euros invested at the start became in each asset, dividends included and already net of the fund's "
+    "fees. The log scale makes equal percentage moves look equal.":
+        "En qué se convirtieron 100 € invertidos al principio en cada activo, con dividendos incluidos y ya netos de "
+        "comisiones. La escala logarítmica hace que subidas porcentuales iguales se vean iguales.",
+    "What does each strategy mean?": "¿Qué significa cada estrategia?",
     # ---- charts
     "Random portfolios": "Carteras aleatorias", "Efficient frontier": "Frontera eficiente",
     "Capital market line": "Línea del mercado de capitales", "Return": "Rentabilidad",
@@ -324,8 +459,9 @@ METHODOLOGY = {
    pence are converted, and every series is converted to the base currency with daily FX. Funds with short histories
    are backfilled with an ETF on the same index; funds Yahoo does not cover are simulated as that ETF (or a blend of
    ETFs) minus the fee difference.
-2. **Expected returns.** By default, long-term capital market assumptions per asset class and region, net of each
-   fund's TER, with an optional alpha for active funds (zero by default, as the SPIVA evidence suggests). Historical,
+2. **Expected returns.** By default, J.P. Morgan's 2027 Long-Term Capital Market Assumptions (euro table) per asset
+   class and region, net of each fund's TER, with an optional alpha for active funds (zero by default, as the SPIVA
+   evidence suggests). Historical,
    EWMA and Bayes-Stein estimates are available for comparison.
 3. **Risk.** Weekly returns and Ledoit-Wolf shrinkage of the covariance towards constant correlation.
 4. **Optimisation.** For weights $w$, expected returns $\mu$ and covariance $\Sigma$:
@@ -348,8 +484,9 @@ This is not financial advice.
    histórico, los precios de Londres en peniques se convierten y cada serie pasa a la divisa base con el tipo de
    cambio diario. Los fondos con poco histórico se alargan con un ETF del mismo índice, y los que Yahoo no cubre se
    simulan como ese ETF (o una mezcla de ETFs) menos la diferencia de comisiones.
-2. **Rentabilidad esperada.** Por defecto, hipótesis a largo plazo por clase de activo y región, netas del TER de
-   cada fondo, con un alfa opcional para los fondos activos (cero por defecto, como sugieren los informes SPIVA).
+2. **Rentabilidad esperada.** Por defecto, las Long-Term Capital Market Assumptions 2027 de J.P. Morgan (tabla en
+   euros) por clase de activo y región, netas del TER de cada fondo, con un alfa opcional para los fondos activos
+   (cero por defecto, como sugieren los informes SPIVA).
    También están disponibles la media histórica, la EWMA y Bayes-Stein para comparar.
 3. **Riesgo.** Rentabilidades semanales y covarianza con shrinkage de Ledoit-Wolf hacia correlación constante.
 4. **Optimización.** Con pesos $w$, rentabilidades esperadas $\mu$ y covarianza $\Sigma$:
@@ -364,5 +501,188 @@ This is not financial advice.
 
 La rentabilidad esperada no se puede estimar con precisión, así que usa el optimizador para entender los
 compromisos entre riesgo y rentabilidad. No es asesoramiento financiero.
+""",
+}
+
+
+GUIDE = {
+    "es": """
+### Cómo usar Portfolio Lab
+
+Portfolio Lab sirve para construir y revisar una cartera de inversión a largo plazo, sea cual sea tu banco o bróker.
+No te dice qué comprar: te ayuda a ver qué riesgo asumes, cómo se reparte tu dinero y qué puedes esperar a cada plazo.
+
+1. **Elige los productos** en la barra lateral. Puedes partir de una plantilla, marcar productos de la lista,
+   buscar cualquier fondo, ETF o acción por nombre o ISIN, añadir cuentas remuneradas o importar tu cartera desde un
+   CSV o Excel.
+2. **Mira el Resumen.** Cómo se ha comportado cada producto, cuánto llegó a caer y si se parecen entre sí.
+3. **Compara estrategias en el Optimizador.** Cada estrategia es una forma distinta de repartir el dinero entre los
+   mismos productos. Abajo tienes cada una explicada.
+4. **Introduce lo que tienes en Mi cartera.** Verás tu distribución por tipo de activo, región y gestión, y un plan
+   para acercarte a la cartera objetivo usando primero el dinero nuevo (sin vender ni pagar impuestos).
+5. **Proyecta tu ahorro en Plan de ahorro.** Con tu aportación mensual y tu plazo verás el dinero esperado y los
+   escenarios buenos y malos.
+6. **Comprueba en Backtest** cómo habría funcionado cada estrategia en los últimos años, sin trampas.
+
+### Cuatro ideas para no perderse
+
+- **Rentabilidad y riesgo van juntos.** Más rentabilidad esperada siempre implica aceptar caídas más grandes por el
+  camino. La pregunta útil es cuánto puedes ver caer tu cartera sin vender.
+- **Diversificar es lo único gratis.** Combinar activos que no se mueven igual reduce el riesgo sin reducir tanto la
+  rentabilidad. Por eso importa la correlación.
+- **El plazo lo cambia todo.** En un año casi cualquier resultado es posible; en veinte, el abanico se estrecha
+  mucho. La pestaña Plan de ahorro lo muestra.
+- **Los costes se acumulan.** Un 1 % de comisión anual durante 30 años se come cerca de una cuarta parte del
+  capital final. Fíjate en el TER.
+
+### De dónde salen las previsiones
+
+Por defecto, las rentabilidades esperadas son las de J.P. Morgan Asset Management en sus *Long-Term Capital Market
+Assumptions 2027* para un inversor en euros (horizonte de 10 a 15 años), menos el TER de cada producto. Son una
+referencia profesional, no una promesa: puedes cambiarlas en el Optimizador. Volatilidades y correlaciones salen del
+histórico de precios.
+
+*Esta herramienta es educativa y no constituye asesoramiento financiero ni fiscal.*
+""",
+    "en": """
+### How to use Portfolio Lab
+
+Portfolio Lab helps you build and review a long-term investment portfolio, whatever your bank or broker. It does not
+tell you what to buy: it shows the risk you take, how your money is spread and what you can expect at each horizon.
+
+1. **Pick the products** in the sidebar: start from a preset, tick products in the list, search any fund, ETF or
+   share by name or ISIN, add remunerated accounts or import your portfolio from a CSV or Excel file.
+2. **Look at the Overview**: how each product behaved, how far it fell and whether they move alike.
+3. **Compare strategies in the Optimiser.** Each strategy is a different way of splitting money between the same
+   products. Each one is explained below.
+4. **Enter what you own in My portfolio** to see your allocation by asset class, region and management, and a plan to
+   move towards the target using new money first (no selling, no tax).
+5. **Project your savings in Savings plan**: expected money plus good and bad scenarios for your monthly contribution
+   and horizon.
+6. **Check in Backtest** how each strategy would really have done in recent years.
+
+### Four ideas to keep in mind
+
+- **Return and risk go together.** Higher expected return always means bigger falls along the way. The useful
+  question is how big a fall you can watch without selling.
+- **Diversification is the only free lunch.** Combining assets that do not move alike lowers risk without cutting
+  return as much. That is why correlation matters.
+- **Time changes everything.** Over one year almost anything can happen; over twenty the range narrows a lot.
+- **Costs compound.** A 1% annual fee over 30 years eats about a quarter of the final capital. Watch the TER.
+
+### Where the forecasts come from
+
+By default, expected returns are J.P. Morgan Asset Management's *2027 Long-Term Capital Market Assumptions* for a euro
+investor (10-15 year horizon), minus each product's TER. They are a professional reference, not a promise; you can
+change them in the Optimiser. Volatilities and correlations come from price history.
+
+*This tool is educational and is not financial or tax advice.*
+""",
+}
+
+STRATEGY_HELP = {
+    "es": {
+        "Maximum Sharpe": "Busca la cartera con más rentabilidad esperada por cada unidad de riesgo (el ratio de "
+                          "Sharpe). Es la cartera óptima de la teoría de Markowitz.\n\n**Para quién:** quien confía en "
+                          "las previsiones de rentabilidad. **Ventaja:** la más eficiente sobre el papel. **Cuidado:** "
+                          "es muy sensible a las previsiones; un cambio pequeño puede mover mucho los pesos y tiende a "
+                          "concentrarse en pocos activos. Por eso conviene limitar el peso máximo por activo.",
+        "Minimum variance": "La cartera con la menor volatilidad posible, sin mirar la rentabilidad.\n\n**Para "
+                            "quién:** perfiles conservadores o quien no se fía de ninguna previsión. **Ventaja:** solo "
+                            "usa riesgos y correlaciones, que se estiman mucho mejor que las rentabilidades. "
+                            "**Cuidado:** se carga de renta fija y liquidez, así que su rentabilidad esperada es baja.",
+        "Maximum diversification": "Saca el máximo partido a diversificar: prefiere activos que se mueven de forma "
+                                   "distinta entre sí.\n\n**Para quién:** quien quiere repartir de verdad. **Ventaja:** "
+                                   "no depende de las previsiones de rentabilidad. **Cuidado:** puede dar mucho peso a "
+                                   "un activo solo porque no se parece al resto.",
+        "Risk parity": "Reparte el riesgo, no el dinero: cada activo aporta la misma parte de la volatilidad total. "
+                       "Como los bonos se mueven menos que las acciones, reciben más dinero.\n\n**Para quién:** quien "
+                       "quiere una cartera equilibrada para cualquier entorno económico (la idea de la cartera All "
+                       "Weather). **Ventaja:** robusta y sin previsiones. **Cuidado:** sin endeudamiento, su "
+                       "rentabilidad esperada es moderada.",
+        "HRP": "Paridad de riesgo jerárquica: agrupa los activos que se parecen (por ejemplo, tres fondos del MSCI "
+               "World) y reparte el riesgo primero entre grupos y luego dentro de cada grupo.\n\n**Para quién:** "
+               "carteras con muchos productos parecidos. **Ventaja:** muy estable, no se descontrola con activos casi "
+               "idénticos. **Cuidado:** es una regla de reparto, no busca la máxima rentabilidad.",
+        "Inverse volatility": "Cada activo pesa en proporción inversa a su volatilidad: lo que se mueve el doble "
+                              "recibe la mitad.\n\n**Para quién:** quien busca una regla sencilla de explicar. "
+                              "**Ventaja:** transparente. **Cuidado:** ignora cómo se relacionan los activos entre sí.",
+        "Equal weight": "El mismo dinero en cada activo.\n\n**Para quién:** como punto de referencia. **Ventaja:** no "
+                        "necesita estimar nada y varios estudios muestran que es difícil de batir fuera de muestra "
+                        "(DeMiguel, Garlappi y Uppal, 2009). **Cuidado:** el resultado depende por completo de qué "
+                        "productos elijas: con cuatro de renta variable y uno de bonos, la cartera es muy arriesgada.",
+    },
+    "en": {
+        "Maximum Sharpe": "The portfolio with the highest expected return per unit of risk (the Sharpe ratio): the "
+                          "optimal portfolio of Markowitz theory.\n\n**For whom:** investors who trust the return "
+                          "forecasts. **Pro:** the most efficient on paper. **Watch out:** very sensitive to the "
+                          "forecasts and prone to concentration, so cap the weight per asset.",
+        "Minimum variance": "The lowest possible volatility, ignoring returns.\n\n**For whom:** cautious investors or "
+                            "anyone who distrusts forecasts. **Pro:** only uses risks and correlations, which are "
+                            "estimated far better than returns. **Watch out:** loads up on bonds and cash, so its "
+                            "expected return is low.",
+        "Maximum diversification": "Gets the most out of diversification by favouring assets that move differently."
+                                   "\n\n**For whom:** investors who want a truly spread portfolio. **Pro:** no return "
+                                   "forecasts needed. **Watch out:** may overweight an asset just because it is "
+                                   "different.",
+        "Risk parity": "Spreads risk, not money: every asset contributes the same share of total volatility, so "
+                       "calmer assets such as bonds get more money.\n\n**For whom:** investors who want balance in any "
+                       "economic environment (the All Weather idea). **Pro:** robust, no forecasts. **Watch out:** "
+                       "without leverage its expected return is moderate.",
+        "HRP": "Hierarchical risk parity: groups similar assets (e.g. three MSCI World funds) and spreads risk first "
+               "between groups and then within each group.\n\n**For whom:** portfolios with many similar products. "
+               "**Pro:** very stable. **Watch out:** it is an allocation rule, it does not chase return.",
+        "Inverse volatility": "Each asset weighs in inverse proportion to its volatility.\n\n**For whom:** anyone who "
+                              "wants a simple rule. **Pro:** transparent. **Watch out:** ignores correlations.",
+        "Equal weight": "The same money in each asset.\n\n**For whom:** as a benchmark. **Pro:** nothing to estimate, "
+                        "and studies show it is hard to beat out of sample (DeMiguel, Garlappi and Uppal, 2009). "
+                        "**Watch out:** the result depends entirely on which products you pick.",
+    },
+}
+
+GLOSSARY = {
+    "es": """
+- **Volatilidad:** cuánto suben y bajan los precios. Un 15 % anual significa que, en un año normal, la rentabilidad
+  suele moverse unos 15 puntos por encima o por debajo de la media.
+- **Rentabilidad media y compuesta:** la media es el promedio de las rentabilidades anuales; la compuesta es la que
+  de verdad hace crecer tu dinero y siempre es algo menor cuando hay volatilidad.
+- **Ratio de Sharpe:** rentabilidad por encima de la liquidez dividida por la volatilidad. Más alto es mejor.
+- **Caída máxima (drawdown):** la mayor pérdida desde un máximo hasta un mínimo posterior.
+- **Correlación:** si dos activos suben y bajan a la vez (cerca de 1) o no (cerca de 0 o negativa).
+- **Frontera eficiente:** las carteras que dan la mayor rentabilidad esperada para cada nivel de riesgo.
+- **TER:** gastos corrientes anuales del fondo o ETF, ya descontados de su precio.
+- **Monte Carlo:** simular miles de futuros posibles para ver el abanico de resultados, no solo uno.
+- **Percentiles (P5, P50, P95):** P5 es un escenario malo (solo el 5 % de los casos acaba peor), P50 el escenario
+  mediano y P95 uno bueno.
+- **TIR:** rentabilidad anual que has obtenido teniendo en cuenta cuándo aportaste cada euro.
+- **Traspaso:** mover dinero de un fondo a otro en España sin pagar impuestos hasta que vendas definitivamente. No
+  existe para ETFs.
+- **Rebalancear:** volver a los pesos objetivo cuando el mercado los ha desviado.
+- **Backtest fuera de muestra:** probar una estrategia en el pasado usando en cada momento solo la información que
+  existía entonces.
+- **ETF, ETC, fondo indexado, fondo activo:** un ETF cotiza en bolsa y suele replicar un índice; un ETC replica una
+  materia prima como el oro; un fondo indexado replica un índice pero no cotiza; un fondo activo tiene un gestor que
+  elige las inversiones y suele cobrar más.
+""",
+    "en": """
+- **Volatility:** how much prices go up and down. 15% a year means a typical year lands about 15 points above or
+  below the average.
+- **Mean and compound return:** the mean averages yearly returns; the compound return is what actually grows your
+  money and is always a bit lower when there is volatility.
+- **Sharpe ratio:** return above cash divided by volatility. Higher is better.
+- **Max drawdown:** the largest fall from a peak to a later low.
+- **Correlation:** whether two assets move together (near 1) or not (near 0 or negative).
+- **Efficient frontier:** the portfolios with the highest expected return for each level of risk.
+- **TER:** a fund's or ETF's annual running costs, already taken out of its price.
+- **Monte Carlo:** simulating thousands of possible futures to see the range of outcomes.
+- **Percentiles (P5, P50, P95):** P5 is a bad scenario (only 5% of cases end lower), P50 the median, P95 a good one.
+- **IRR:** the yearly return you earned, taking into account when each euro went in.
+- **Traspaso:** moving money between funds in Spain without paying tax until you finally sell. Not available for ETFs.
+- **Rebalancing:** going back to the target weights after markets have moved them.
+- **Out-of-sample backtest:** testing a strategy on the past using, at each moment, only the information available
+  then.
+- **ETF, ETC, index fund, active fund:** an ETF trades on an exchange and usually tracks an index; an ETC tracks a
+  commodity such as gold; an index fund tracks an index but is not listed; an active fund has a manager who picks the
+  investments and usually charges more.
 """,
 }

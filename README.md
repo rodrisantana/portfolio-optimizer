@@ -10,9 +10,18 @@ whole workflow:
   Fidelity, iShares, the Amundi range sold at Openbank) and **actively managed funds** (Cobas, Azvalor, Magallanes,
   Bestinver, True Value, Fundsmith, Carmignac, DWS, Comgest...), all found by ISIN. Funds Yahoo does not cover are
   simulated from an ETF (or blend of ETFs) on the same index minus the fee difference, and you can add your own.
-* **Long-term forecasts.** Expected returns come from forward-looking capital market assumptions per asset class and
-  region, net of each fund's TER, with an optional alpha for active managers (zero by default, as the SPIVA evidence
-  suggests). Historical, EWMA and Bayes-Stein estimates are there for comparison.
+* **Expert long-term forecasts.** Expected returns come from J.P. Morgan's *2027 Long-Term Capital Market
+  Assumptions* (euro table, 10-15 years) per asset class and region, net of each fund's TER, with an optional alpha
+  for active managers (zero by default, as the SPIVA evidence suggests). Editable, with a more conservative set and
+  historical / Bayes-Stein estimates for comparison.
+* **Cash and bonds too.** Money-market funds and ETFs, short-term and corporate bond funds, and **remunerated accounts
+  and deposits** at the interest rate you are offered.
+* **Search anything.** Find any fund, ETF or share on Yahoo Finance by name, ISIN or ticker; it is classified
+  automatically (asset class, region, active or passive, vehicle) and stays editable.
+* **Import / export.** Load your portfolio from a CSV or Excel export of any bank or broker (columns detected in
+  Spanish or English, Spanish number formats supported) and download it back, with an import template.
+* **Built for beginners as well.** A "Start here" guide, plain-language explanations of every strategy and chart, and
+  a glossary.
 * **Allocation breakdowns.** Equity / fixed income / money market / commodities / crypto (look-through for mixed
   funds), region, active vs passive management, and vehicle (ETF, ETC, index fund, active fund...).
 * **Multi-currency.** Prices are converted to your base currency with daily FX and LSE quotes in pence are fixed.
@@ -49,7 +58,7 @@ Your own universe, settings and holdings can be saved the same way.
 | **Overview** | Instruments with editable type, management, class, region and TER; performance, drawdowns, correlations and calendar-year returns in your base currency. |
 | **Optimiser** | Editable long-term assumptions, efficient frontier, every strategy side by side (including its share in active funds), weights, allocation breakdowns and risk contributions. |
 | **My portfolio** | Where your portfolio sits, how much return you leave on the table at the same risk, its breakdown vs a target, and the trades to get there with a tax estimate. |
-| **Savings plan** | Year-by-year expected path with monthly contributions and a Monte Carlo fan chart in today's money, with the probability of reaching a goal. |
+| **Savings plan** | Year-by-year median path with monthly contributions, a Monte Carlo fan chart in today's money, the probability of reaching a goal, and expected return and money at 1, 3, 5, 10, 20+ years. |
 | **Backtest** | Walk-forward comparison against a buy-and-hold benchmark and the IRR of a monthly investing plan over the same years. |
 
 <p>
@@ -68,6 +77,10 @@ error for an equity ETF is about 6% a year. The default is therefore a set of lo
 (editable in the app):
 
 $$E[r_i] = \sum_c e_{i,c}\,\mathrm{CMA}(c, \text{region}_i) - \mathrm{TER}_i + \alpha_i$$
+
+The default CMA set is J.P. Morgan Asset Management's 2027 LTCMA euro table (arithmetic means for the optimiser and
+Monte Carlo; compound returns shown for reference). Deterministic projections grow at the median rate
+$(1+\mu)/\sqrt{1+\sigma^2/(1+\mu)^2} - 1 \approx \mu - \sigma^2/2$, not at the mean.
 
 where $e_{i,c}$ is the share of asset class $c$ in the instrument (look-through for mixed funds) and $\alpha_i$ is
 the expected alpha of active funds, zero by default. For history-based estimates the app also offers the Bayes-Stein
@@ -112,7 +125,10 @@ portfolio_optimizer/
 ├── assumptions.py  long-term capital market assumptions and expected returns net of fees
 ├── breakdown.py    allocation by asset class, region, management and vehicle
 ├── planning.py     expected path with monthly contributions, historical monthly investing, IRR
-├── i18n.py         English / Spanish interface
+├── classify.py     guesses class, region, management and vehicle for unknown products
+├── search.py       Yahoo Finance search with history check
+├── portfolio_io.py CSV / Excel import and export, Spanish number formats, accounts
+├── i18n.py         English / Spanish interface, beginner guide and glossary
 ├── estimators.py   historical / EWMA / Bayes-Stein means; sample / Ledoit-Wolf / EWMA covariance
 ├── optimizer.py    mean-variance, risk parity, HRP, frontier, constraints, risk contributions
 ├── metrics.py      CAGR, Sharpe, Sortino, drawdowns, VaR / CVaR, beta, tracking error
@@ -147,7 +163,9 @@ The app runs on [Streamlit Community Cloud](https://streamlit.io/cloud) for free
 * Yahoo Finance is free but not perfect: some European listings have gaps or bad prints (a filter removes one-day
   spikes) and fund histories only start in 2018 (2022 for Amundi). Older years and uncovered funds use a proxy, which
   the app always labels. Prefer accumulating share classes, whose prices already include dividends.
-* The long-term assumptions are round, editable numbers, not a forecast from any specific asset manager.
+* The long-term assumptions are J.P. Morgan's published estimates (a few rows marked "own" are ours, e.g. crypto has
+  no expert forecast and is given the cash return). They are estimates, not promises.
+* Finect, Morningstar and similar sites have no public API, so the search uses Yahoo Finance.
 * The tax estimate uses average cost and ignores loss offsetting. This project is a learning and analysis tool, not
   financial or tax advice.
 
@@ -160,3 +178,6 @@ The app runs on [Streamlit Community Cloud](https://streamlit.io/cloud) for free
 * Choueifaty, Y. and Coignard, Y. (2008). Toward Maximum Diversification. *Journal of Portfolio Management*, 35(1), 40-51.
 * Spinu, F. (2013). An Algorithm for Computing Risk Parity Weights. SSRN 2297383.
 * Lopez de Prado, M. (2016). Building Diversified Portfolios that Outperform Out of Sample. *Journal of Portfolio Management*, 42(4), 59-69.
+
+* J.P. Morgan Asset Management (2026). *2027 Long-Term Capital Market Assumptions*.
+* DeMiguel, V., Garlappi, L. and Uppal, R. (2009). Optimal Versus Naive Diversification. *Review of Financial Studies*, 22(5), 1915-1953.

@@ -290,6 +290,24 @@ def apply_fee_drag(prices: pd.Series, annual_fee: float) -> pd.Series:
     return prices.iloc[0] * (1 + r).cumprod()
 
 
+def account_series(rate_index: pd.Series, rate: float, window: int = 63) -> pd.Series:
+    """Value of money in a remunerated account or deposit paying ``rate`` today.
+
+    Banks move their rates with the ECB. The history is therefore built from a
+    euro short-term rate index (the €STR ETF): the trailing annualised €STR
+    plus a constant spread chosen so that today's rate equals ``rate``, never
+    below zero (accounts did not charge you during negative rates). Forecasts
+    use ``rate`` directly.
+    """
+    x = rate_index.dropna()
+    trailing = (x / x.shift(window)) ** (252 / window) - 1
+    trailing = trailing.bfill()
+    current = float(x.iloc[-1] / x.iloc[-min(len(x), 253)] - 1) if len(x) > 20 else float(trailing.iloc[-1])
+    daily = (trailing + (rate - current)).clip(lower=0.0) / 252.0
+    daily.iloc[0] = 0.0
+    return 100.0 * (1.0 + daily).cumprod()
+
+
 def load_demo() -> PriceData:
     """Offline dataset (EUR prices) shipped with the repo, used by tests and as a fallback."""
     df = pd.read_csv(DEMO_PATH, index_col=0, parse_dates=True)
@@ -353,6 +371,8 @@ def load_prices(
     failed: dict[str, str] = {}
 
     def _get(identifier: str):
+        if describe(identifier).rate is not None:     # account / deposit: built from the €STR below
+            raise ValueError("account")
         if " " in identifier:                  # a fund the user named; it lives on its proxy
             raise ValueError("no Yahoo symbol")
         symbol = resolve_symbol(identifier)
@@ -386,6 +406,15 @@ def load_prices(
     synthetic: dict[str, str] = {}
     for identifier in identifiers:
         inst = describe(identifier)
+        if inst.rate is not None:
+            try:
+                estr, _ = proxy_series(inst.proxy or "XEON.DE", base_currency, fx_cache, refresh)
+                converted[identifier] = account_series(estr, inst.rate).rename(identifier)
+                synthetic[identifier] = f"€STR ({inst.proxy or 'XEON.DE'}) + spread"
+                currencies[identifier] = base_currency
+            except Exception as exc:
+                warnings.append(f"Skipped {identifier}: could not build the account history ({exc}).")
+            continue
         series = converted.get(identifier)
         too_short = series is None or len(series) < MIN_REAL_HISTORY
         if not inst.proxy or not (backfill or too_short):

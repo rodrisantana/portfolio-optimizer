@@ -61,3 +61,14 @@ def test_required_contribution_monotone():
     c50 = required_contribution(inp, 50_000, 0.5)
     c90 = required_contribution(inp, 50_000, 0.9)
     assert 0 < c50 < c90 < 50_000 / 120
+
+
+def test_horizon_table_narrows_with_time():
+    from portfolio_optimizer.montecarlo import horizon_table
+    inp = SimulationInput(initial=10_000, monthly_contribution=100, years=20, expected_return=0.06,
+                          volatility=0.15, annual_fee=0.0, n_sims=4000)
+    tab = horizon_table(simulate(inp), real=False)
+    spread = tab["Return P90"] - tab["Return P10"]
+    assert spread.is_monotonic_decreasing
+    assert tab.loc[20, "Return P50"] == pytest.approx(0.06 - 0.15 ** 2 / 2, abs=0.01)
+    assert tab["Probability of a loss"].iloc[0] > tab["Probability of a loss"].iloc[-1]

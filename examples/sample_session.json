@@ -7,7 +7,7 @@
     "freq": "weekly",
     "r_method": "long_term",
     "c_method": "ledoit_wolf",
-    "rf": 2.0,
+    "rf": 2.6,
     "max_w": 0.5
   },
   "custom_funds": [
@@ -16,8 +16,8 @@
   ],
   "holdings": {
     "EUNL.DE": {"value": 9200, "cost": 7000},
-    "Amundi World": {"value": 5000, "cost": 4100},
-    "Cobas Internacional": {"value": 2500, "cost": 2300},
+    "LU0996182563": {"value": 5000, "cost": 4100},
+    "ES0119199000": {"value": 2500, "cost": 2300},
     "IS3N.DE": {"value": 1800, "cost": 1700},
     "VGEA.DE": {"value": 2100, "cost": 2300},
     "4GLD.DE": {"value": 1300, "cost": 900},

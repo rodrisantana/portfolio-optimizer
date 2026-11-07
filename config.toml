@@ -14,7 +14,7 @@ frequency = "weekly"          # daily | weekly | monthly
 expected_returns = "long_term"     # long_term | bayes_stein | historical | ewma
 active_alpha = 0.0                 # extra return expected from active funds before fees
 covariance = "ledoit_wolf"    # sample | ledoit_wolf | ewma
-risk_free_rate = 0.015
+risk_free_rate = 0.026          # euro cash, J.P. Morgan 2027 LTCMA
 
 [constraints]
 max_weight = 0.5
@@ -39,7 +39,7 @@ monthly_contribution = 300
 years = 20
 # expected_return = 0.06      # uncomment to override the model's long-term estimate (net of TER)
 extra_costs = 0.0             # platform / custody fees; fund TERs are already in the expected return
-inflation = 0.02
+inflation = 0.022
 method = "student_t"          # lognormal | student_t | bootstrap
 simulations = 10000
 goal = 150000                 # in today's money

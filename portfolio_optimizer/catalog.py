@@ -11,7 +11,10 @@ and for the asset-class limits of the optimiser:
   Mixed (a mixed fund declares its split in ``exposure``)
 * ``region``:      Global, US, Europe, Eurozone, Emerging, Japan, n/a
 * ``management``:  Passive (tracks an index) or Active (a manager picks)
-* ``kind``:        ETF, ETC, ETN, Index fund, Active fund, Spot
+* ``kind``:        ETF, ETC, ETN, Index fund, Active fund, Pension plan, Account,
+                   Deposit, Stock, Spot
+
+Remunerated accounts and deposits carry a ``rate`` (the TAE you are offered).
 
 Funds are resolved from their ISIN, because Yahoo stores them under opaque
 Morningstar ids such as ``0P00000WLG.F``. Yahoo only has fund prices since
@@ -24,13 +27,16 @@ simulated as proxy minus the extra fees.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 EQUITY, FIXED_INCOME, MONEY_MARKET, COMMODITIES, CRYPTO, MIXED = (
     "Equity", "Fixed income", "Money market", "Commodities", "Crypto", "Mixed")
 ASSET_CLASSES = (EQUITY, FIXED_INCOME, MONEY_MARKET, COMMODITIES, CRYPTO)
 REGIONS = ("Global", "US", "Europe", "Eurozone", "Emerging", "Japan", "n/a")
-KINDS = ("ETF", "ETC", "ETN", "Index fund", "Active fund", "Stock", "Spot", "Custom")
+KINDS = ("ETF", "ETC", "ETN", "Index fund", "Active fund", "Pension plan", "Account", "Deposit", "Stock", "Spot",
+         "Custom")
+FUND_KINDS = ("Index fund", "Active fund")
+CASH_KINDS = ("Account", "Deposit")
 MANAGEMENT = ("Passive", "Active")
 
 
@@ -47,6 +53,7 @@ class Instrument:
     management: str = "Passive"
     proxy: str = ""              # ETF or ETF blend that follows the same index / allocation
     exposure: tuple[tuple[str, float], ...] = ()   # only for mixed funds
+    rate: float | None = None    # interest rate (TAE) of an account or deposit
     note: str = ""
     tags: tuple[str, ...] = field(default_factory=tuple)
     short: str = ""              # compact chart label; defaults to the symbol
@@ -62,7 +69,16 @@ class Instrument:
     @property
     def is_fund(self) -> bool:
         """Spanish tax law lets you switch between funds tax-free (traspaso)."""
-        return self.kind in ("Index fund", "Active fund")
+        return self.kind in FUND_KINDS
+
+    @property
+    def tax_free_switch(self) -> bool:
+        """Moving money out triggers no capital-gains tax today.
+
+        Funds (traspaso), pension plans (traspaso between plans) and cash
+        accounts or deposits (their interest is taxed every year as it is paid).
+        """
+        return self.kind in FUND_KINDS + ("Pension plan",) + CASH_KINDS
 
     @property
     def exposures(self) -> dict[str, float]:
@@ -76,10 +92,11 @@ def _etf(symbol, name, asset_class, ter, isin="", region="Global", category="Bro
     return Instrument(symbol, name, "ETF", asset_class, ter, isin, region, category, **kw)
 
 
-def _fund(isin, name, asset_class, ter, region, category, proxy, short, management="Passive", **kw):
+def _fund(symbol, name, asset_class, ter, region, category, proxy, short, management="Passive", isin=None, **kw):
+    """A fund identified by its ISIN (default) or, when Yahoo only knows a share class, by its Yahoo symbol."""
     kind = "Active fund" if management == "Active" else "Index fund"
-    return Instrument(isin, name, kind, asset_class, ter, isin, region, category, management, proxy,
-                      short=short, **kw)
+    return Instrument(symbol, name, kind, asset_class, ter, symbol if isin is None else isin, region, category,
+                      management, proxy, short=short, **kw)
 
 
 CATALOG: tuple[Instrument, ...] = (
@@ -180,6 +197,41 @@ CATALOG: tuple[Instrument, ...] = (
           "CG New Perspective", "Active", note="No usable Yahoo history: simulated from MSCI ACWI minus fees."),
     _fund("LU0346389348", "Fidelity Global Technology A Acc EUR", EQUITY, 0.0189, "Global", "Technology", "SXRV.DE",
           "Fidelity Global Tech", "Active", note="No usable Yahoo history: simulated from the Nasdaq 100 minus fees."),
+    # ---------------- Money market and short-term bond ETFs ----------------
+    _etf("CSH2.PA", "Amundi Smart Overnight Return", MONEY_MARKET, 0.0010, "LU1190417599", "Eurozone", "Cash",
+         proxy="XEON.DE"),
+    _etf("ERNE.AS", "iShares EUR Ultrashort Bond", FIXED_INCOME, 0.0009, "IE00BCRY6557", "Eurozone", "Short-term",
+         proxy="XEON.DE"),
+    _etf("IEAC.AS", "iShares Core EUR Corp Bond", FIXED_INCOME, 0.0009, "IE00B3F81R35", "Eurozone", "Corporate"),
+    _etf("VECA.DE", "Vanguard EUR Corporate Bond (Acc)", FIXED_INCOME, 0.0009, "IE00BGYWT403", "Eurozone",
+         "Corporate", proxy="IEAC.AS"),
+    # ---------------- Money market and bond funds (Yahoo symbol; share class verified) ----------------
+    _fund("0P0000YFJY.F", "Amundi Euro Liquidity-Rated Responsible P", MONEY_MARKET, 0.0020, "Eurozone", "Cash",
+          "XEON.DE", "Amundi Liquidity (MM)", isin=""),
+    _fund("0P00000B50.F", "DWS Euro Ultra Short Fixed Income NC", FIXED_INCOME, 0.0035, "Eurozone", "Short-term",
+          "ERNE.AS", "DWS Ultra Short", "Active", isin=""),
+    _fund("0P00000N4I.F", "DWS Floating Rate Notes LC", FIXED_INCOME, 0.0030, "Eurozone", "Short-term", "ERNE.AS",
+          "DWS Floating Rate", "Active", isin=""),
+    _fund("0P0000AERX.F", "Fidelity Euro Short Term Bond A-Acc-EUR", FIXED_INCOME, 0.0070, "Eurozone", "Short-term",
+          "ERNE.AS:0.5,IEAC.AS:0.5", "Fidelity Euro Short Bond", "Active", isin=""),
+    _fund("0P00000M9H.F", "Evli Short Corporate Bond B", FIXED_INCOME, 0.0060, "Europe", "Corporate",
+          "ERNE.AS:0.5,IEAC.AS:0.5", "Evli Short Corporate", "Active", isin=""),
+    _fund("0P0000X9NY.F", "PIMCO GIS Income E EUR Hedged Acc", FIXED_INCOME, 0.0145, "Global", "Income", "EUNA.DE",
+          "PIMCO Income", "Active", isin=""),
+    # ---------------- MyInvestor funds and pension plans ----------------
+    _fund("0P0001MRGY.F", "MyInvestor S&P500 Equiponderado FI", EQUITY, 0.0030, "US", "Equal weight", "SXR8.DE",
+          "MyInvestor S&P500 EW", isin="", note="Equal-weight S&P 500; backfilled with the cap-weighted index."),
+    _fund("0P0001MRGW.F", "MyInvestor Nasdaq 100 FI", EQUITY, 0.0030, "US", "Growth", "SXRV.DE",
+          "MyInvestor Nasdaq 100", isin=""),
+    _fund("0P0001NMUE.F", "MyInvestor Value B FI", EQUITY, 0.0105, "Global", "Value", "EUNL.DE", "MyInvestor Value",
+          "Active", isin=""),
+    _fund("0P0001BODO.F", "MyInvestor Cartera Permanente FI", MIXED, 0.0060, "Global", "Permanent portfolio",
+          "EUNL.DE:0.25,SXRQ.DE:0.25,4GLD.DE:0.25,XEON.DE:0.25", "Cartera Permanente", "Active", isin="",
+          exposure=((EQUITY, 0.25), (FIXED_INCOME, 0.25), (COMMODITIES, 0.25), (MONEY_MARKET, 0.25))),
+    Instrument("0P0001LIG7.F", "MyInvestor Indexado Global PP", "Pension plan", EQUITY, 0.0030, "", "Global",
+               "Broad", "Passive", "EUNL.DE", short="MyInvestor Global PP",
+               note="Pension plan: contributions deduct from taxable income (up to 1,500 EUR a year) but the money "
+                    "is locked until retirement."),
     # ---------------- US-listed ETFs (reference only) ----------------
     _etf("SPY", "SPDR S&P 500 ETF Trust", EQUITY, 0.000945, region="US", tags=("us",),
          note="US-domiciled: EU retail investors usually cannot buy it (no PRIIPs KID)."),
@@ -190,6 +242,59 @@ CATALOG: tuple[Instrument, ...] = (
     Instrument("GLD", "SPDR Gold Shares", "ETF", COMMODITIES, 0.0040, region="n/a", category="Gold", tags=("us",)),
 )
 
+# Readable chart and table labels: index or theme first, then the provider.
+SHORT_NAMES = {'EUNL.DE': 'MSCI World · iShares',
+    'VWCE.DE': 'FTSE All-World · Vanguard',
+    'IUSQ.DE': 'MSCI ACWI · iShares',
+    'SPYI.DE': 'ACWI IMI · SPDR',
+    'XDWD.DE': 'MSCI World · Xtrackers',
+    'SXR8.DE': 'S&P 500 · iShares',
+    'SXRV.DE': 'Nasdaq 100 · iShares',
+    'IMAE.AS': 'MSCI Europe · iShares',
+    'SXR7.DE': 'MSCI EMU · iShares',
+    'SXRT.DE': 'Euro Stoxx 50 · iShares',
+    'IS3N.DE': 'EM IMI · iShares',
+    'IUSN.DE': 'World Small Cap · iShares',
+    'ZPRV.DE': 'USA Small Value · SPDR',
+    'ZPRX.DE': 'Europe Small Value · SPDR',
+    'IS3Q.DE': 'World Quality · iShares',
+    'IS3R.DE': 'World Momentum · iShares',
+    'VGEA.DE': 'Euro Govt Bond · Vanguard',
+    'SXRQ.DE': 'Euro Govt 7-10y · iShares',
+    'IBCI.DE': 'Euro Inflation Bond · iShares',
+    'EUNA.DE': 'Global Agg Bond · iShares',
+    'VAGF.DE': 'Global Agg Bond · Vanguard',
+    'IBC5.DE': 'US TIPS (EUR-H) · iShares',
+    'XEON.DE': '€STR Cash · Xtrackers',
+    '4GLD.DE': 'Gold · Xetra-Gold',
+    'SGLN.L': 'Gold · iShares',
+    'PHAG.L': 'Silver · WisdomTree',
+    'VBTC.DE': 'Bitcoin · VanEck',
+    'BTC-EUR': 'Bitcoin (spot)',
+    'CSH2.PA': 'Overnight Cash · Amundi',
+    'ERNE.AS': 'Euro Ultrashort · iShares',
+    'IEAC.AS': 'Euro Corp Bond · iShares',
+    'VECA.DE': 'Euro Corp Bond · Vanguard',
+    'SPY': 'S&P 500 · SPY (US)',
+    'QQQ': 'Nasdaq 100 · QQQ (US)',
+    'VTI': 'US Total Market · VTI (US)',
+    'TLT': 'US Treasury 20y+ · TLT (US)',
+    'BND': 'US Bonds · BND (US)',
+    'GLD': 'Gold · GLD (US)',
+    'IE00B03HD191': 'MSCI World · Vanguard fund',
+    'IE00BYX5NX33': 'MSCI World · Fidelity fund',
+    'IE00BD0NCM55': 'MSCI World · iShares fund',
+    'IE0032126645': 'S&P 500 · Vanguard fund',
+    'IE0031786696': 'Emerging · Vanguard fund',
+    'IE00B42W4L06': 'Small Cap · Vanguard fund',
+    'IE00B18GC888': 'Global Bond · Vanguard fund',
+    'LU0996182563': 'MSCI World · Amundi fund',
+    'LU0996179007': 'S&P 500 · Amundi fund',
+    'LU0389811885': 'MSCI Europe · Amundi fund',
+    'LU0996177134': 'Emerging · Amundi fund',
+    'LU0389812933': 'Global Govt · Amundi fund'}
+CATALOG = tuple(replace(i, short=SHORT_NAMES[i.symbol]) if i.symbol in SHORT_NAMES else i for i in CATALOG)
+
 _BY_SYMBOL = {i.symbol: i for i in CATALOG}
 _REGISTRY: dict[str, Instrument] = {}      # user-defined instruments added at runtime
 
@@ -199,8 +304,17 @@ def register(inst: Instrument) -> None:
     _REGISTRY[inst.symbol] = inst
 
 
+_BY_ISIN = {i.isin: i for i in CATALOG if i.isin}
+
+
 def get(symbol: str) -> Instrument | None:
     return _REGISTRY.get(symbol) or _BY_SYMBOL.get(symbol)
+
+
+def find(identifier: str) -> Instrument | None:
+    """Catalogue entry by symbol or by ISIN (an ETF is listed by ticker but often known by ISIN)."""
+    code = identifier.strip()
+    return get(code) or get(code.upper()) or _BY_ISIN.get(code.upper())
 
 
 def describe(symbol: str) -> Instrument:
@@ -250,6 +364,9 @@ PRESETS: dict[str, list[str]] = {
     "Active vs passive (Spanish value funds vs MSCI World)": ["EUNL.DE", "ES0119199000", "ES0112611001",
                                                              "ES0114638036", "LU0690375182"],
     "All-weather style": ["EUNL.DE", "SXRQ.DE", "IBCI.DE", "4GLD.DE", "XEON.DE"],
+    "Conservative: money market and short-term bonds": ["0P0000YFJY.F", "ERNE.AS", "0P0000AERX.F", "IEAC.AS",
+                                                        "EUNL.DE"],
+    "MyInvestor funds": ["0P0001MRGY.F", "0P0001MRGW.F", "0P0001NMUE.F", "0P0001BODO.F", "IE00B18GC888"],
     "Equity tilts": ["EUNL.DE", "SXRV.DE", "IS3N.DE", "IUSN.DE", "ZPRV.DE", "IS3Q.DE"],
     "Growth + crypto": ["VWCE.DE", "SXRV.DE", "4GLD.DE", "BTC-EUR"],
 }

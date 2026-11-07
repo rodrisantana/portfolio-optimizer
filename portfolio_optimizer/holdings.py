@@ -106,7 +106,7 @@ def rebalance_plan(holdings: list[Holding], target: pd.Series, new_cash: float =
         "Weight after": after / after.sum() if after.sum() > 0 else after,
         "Realised gain": realised,
         "Estimated tax": tax_share * total_tax + 0.0,
-        "Traspaso eligible": is_fund,
+        "Tax-free switch": is_fund,
     })
     out.index.name = "Asset"
     return out

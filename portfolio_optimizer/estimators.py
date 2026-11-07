@@ -86,7 +86,7 @@ def ledoit_wolf_cov(returns: pd.DataFrame, periods_per_year: int) -> tuple[pd.Da
     xc = x - x.mean(axis=0)
     s = xc.T @ xc / t                                  # MLE sample covariance
     var = np.diag(s)
-    std = np.sqrt(var)
+    std = np.sqrt(np.maximum(var, 1e-18))              # guard against a constant series
     corr = s / np.outer(std, std)
     r_bar = (corr.sum() - n) / (n * (n - 1)) if n > 1 else 0.0
     f = r_bar * np.outer(std, std)
@@ -144,6 +144,24 @@ def nearest_psd(cov: pd.DataFrame, eps: float = 1e-10) -> pd.DataFrame:
     fixed = vecs @ np.diag(vals) @ vecs.T
     fixed = (fixed + fixed.T) / 2
     return pd.DataFrame(fixed, index=cov.index, columns=cov.columns)
+
+
+def floor_volatility(cov: pd.DataFrame, min_vol: float = 0.002) -> pd.DataFrame:
+    """Give every asset at least ``min_vol`` annual volatility.
+
+    A remunerated account or a money-market fund is almost riskless; with a
+    volatility of ~0 the risk-based methods divide by zero and maximum Sharpe
+    becomes degenerate. Raising the variance floor keeps correlations intact.
+    """
+    sd = np.sqrt(np.diag(cov.values))
+    new_sd = np.maximum(sd, min_vol)
+    scale = np.where(sd > 0, new_sd / np.where(sd > 0, sd, 1.0), 1.0)
+    out = cov.values * np.outer(scale, scale)
+    zero = sd == 0
+    out[zero, :] = 0.0
+    out[:, zero] = 0.0
+    out[zero, zero] = min_vol ** 2
+    return pd.DataFrame(out, index=cov.index, columns=cov.columns)
 
 
 def cov_to_corr(cov: pd.DataFrame) -> pd.DataFrame:

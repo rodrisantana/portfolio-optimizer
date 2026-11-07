@@ -37,7 +37,8 @@ def test_long_term_returns_net_of_fees_and_lookthrough():
     lt = long_term_returns(insts)
     assert lt["EUNL.DE"] == pytest.approx(DEFAULT_CMA["Equity · Global"] - 0.0020)
     assert lt["IS3N.DE"] == pytest.approx(DEFAULT_CMA["Equity · Emerging"] - 0.0018)
-    assert lt["ES0119199000"] == pytest.approx(DEFAULT_CMA["Equity · Global"] + 0.005 - 0.018)
+    premium = DEFAULT_CMA["Equity · small cap / value premium"]
+    assert lt["ES0119199000"] == pytest.approx(DEFAULT_CMA["Equity · Global"] + premium - 0.018)
     carm = 0.4 * DEFAULT_CMA["Equity · Global"] + 0.6 * DEFAULT_CMA["Fixed income · Aggregate"] - 0.015
     assert lt["FR0010135103"] == pytest.approx(carm)
     assert long_term_returns(insts, active_alpha=0.01)["ES0119199000"] == pytest.approx(lt["ES0119199000"] + 0.01)
@@ -63,3 +64,9 @@ def test_group_limit_uses_exposure(toy):
     g = GroupLimit("Equity", ["A", "B", "C"], 0.0, 0.5, exposure={"A": 0.0, "B": 1.0, "C": 0.5})
     p = PortfolioOptimizer(mu, cov, 0.0, Constraints(groups=[g])).max_sharpe()
     assert p.weights["B"] + 0.5 * p.weights["C"] <= 0.5 + 1e-6
+
+
+def test_median_growth_below_mean():
+    from portfolio_optimizer.assumptions import median_growth
+    assert median_growth(0.07, 0.0) == pytest.approx(0.07)
+    assert median_growth(0.07, 0.15) == pytest.approx(0.07 - 0.15 ** 2 / 2, abs=0.003)

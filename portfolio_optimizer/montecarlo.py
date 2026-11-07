@@ -184,3 +184,29 @@ def required_contribution(inp: SimulationInput, target: float, confidence: float
         mid = (lo + hi) / 2
         lo, hi = (lo, mid) if ok(mid) else (mid, hi)
     return hi
+
+
+def horizon_table(sim: SimulationResult, horizons: list[int] | None = None, real: bool = True) -> pd.DataFrame:
+    """Return and money at several horizons.
+
+    The annualised return of each path over the first ``h`` years (investment
+    return only, contributions excluded) shows how uncertainty shrinks with
+    time; the money columns include contributions.
+    """
+    years = sim.returns.shape[1] // 12
+    horizons = horizons or [h for h in (1, 3, 5, 10, 15, 20, 25, 30, 40, 50) if h <= years]
+    if years not in horizons:
+        horizons = sorted(set(horizons) | {years})
+    rows = []
+    log_growth = np.cumsum(np.log1p(sim.returns), axis=1)
+    for h in horizons:
+        m = 12 * h
+        ann = np.expm1(log_growth[:, m - 1] / h)
+        vals = sim.paths[:, m] / (sim.deflator[m] if real else 1.0)
+        contributed = sim.contributed[m] / (sim.deflator[m] if real else 1.0)
+        q = np.percentile(ann, [10, 25, 50, 75, 90])
+        v = np.percentile(vals, [10, 50, 90])
+        rows.append({"Years": h, "Return P10": q[0], "Return P25": q[1], "Return P50": q[2], "Return P75": q[3],
+                     "Return P90": q[4], "Probability of a loss": float((ann < 0).mean()),
+                     "Contributed": contributed, "Money P10": v[0], "Money P50": v[1], "Money P90": v[2]})
+    return pd.DataFrame(rows).set_index("Years")
