@@ -1,19 +1,26 @@
 {
   "widgets": {
-    "source": "Yahoo Finance (live)",
-    "catalog_assets": ["EUNL.DE", "IS3N.DE", "IE00B42W4L06", "VGEA.DE", "EUNA.DE", "4GLD.DE"],
+    "lang": "es",
+    "source": "live",
+    "catalog_assets": ["EUNL.DE", "IS3N.DE", "LU0996182563", "ES0119199000", "VGEA.DE", "EUNA.DE", "4GLD.DE"],
     "base": "EUR",
     "freq": "weekly",
-    "r_method": "bayes_stein",
+    "r_method": "long_term",
     "c_method": "ledoit_wolf",
-    "rf": 1.5,
+    "rf": 2.0,
     "max_w": 0.5
   },
+  "custom_funds": [
+    {"Name": "Fondo mixto de ejemplo", "ISIN or ticker": "", "Proxy": "EUNL.DE:0.6,EUNA.DE:0.4", "TER %": 1.2,
+     "Class": "Mixto", "Region": "Global", "Management": "Activa"}
+  ],
   "holdings": {
-    "EUNL.DE": {"value": 14200, "cost": 11000},
-    "IS3N.DE": {"value": 2600, "cost": 2400},
-    "VG Small Cap (fund)": {"value": 1800, "cost": 1500},
+    "EUNL.DE": {"value": 9200, "cost": 7000},
+    "Amundi World": {"value": 5000, "cost": 4100},
+    "Cobas Internacional": {"value": 2500, "cost": 2300},
+    "IS3N.DE": {"value": 1800, "cost": 1700},
     "VGEA.DE": {"value": 2100, "cost": 2300},
-    "4GLD.DE": {"value": 1300, "cost": 900}
+    "4GLD.DE": {"value": 1300, "cost": 900},
+    "Fondo mixto de ejemplo": {"value": 3000, "cost": 2800}
   }
 }

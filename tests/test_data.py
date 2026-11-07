@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from portfolio_optimizer.catalog import CATALOG, PRESETS, get, is_isin
+from portfolio_optimizer.catalog import ASSET_CLASSES, CATALOG, PRESETS, get, is_isin, parse_proxy
 from portfolio_optimizer.data import (
     align,
     backfill_with_proxy,
@@ -25,8 +25,11 @@ def test_catalog_isins_are_valid_and_unique():
         if inst.isin:
             assert is_isin(inst.isin), inst
         if inst.proxy:
-            assert get(inst.proxy) is not None, inst
+            assert all(get(p) is not None for p in parse_proxy(inst.proxy)), inst
         assert 0 <= inst.ter < 0.02
+        assert abs(sum(inst.exposures.values()) - 1) < 1e-9
+        assert set(inst.exposures) <= set(ASSET_CLASSES), inst
+        assert inst.is_fund == (inst.kind in ("Index fund", "Active fund"))
     for members in PRESETS.values():
         assert all(get(m) is not None for m in members)
 
@@ -102,3 +105,20 @@ def test_parse_spanish_csv():
 def test_parse_iso_csv():
     df = parse_uploaded_csv(b"Date,A,B\n2024-01-02,1.5,2\n2024-01-03,1.6,2.1\n")
     assert df.shape == (2, 2) and df.index[0] == pd.Timestamp("2024-01-02")
+
+
+def test_parse_proxy():
+    assert parse_proxy("EUNL.DE") == {"EUNL.DE": 1.0}
+    assert parse_proxy("A:0.4, B:0.6") == pytest.approx({"A": 0.4, "B": 0.6})
+    assert parse_proxy("A:2,B:2") == pytest.approx({"A": 0.5, "B": 0.5})
+
+
+def test_blend_and_fee_drag():
+    from portfolio_optimizer.data import apply_fee_drag, blend_index
+    a = _series(np.linspace(100, 200, 300), name="A")
+    b = _series(np.full(300, 50.0), name="B")
+    blend = blend_index({"A": a, "B": b}, {"A": 0.5, "B": 0.5})
+    np.testing.assert_allclose(blend.pct_change().dropna().values, 0.5 * a.pct_change().dropna().values)
+    flat = _series(np.full(253, 10.0))
+    dragged = apply_fee_drag(flat, 0.0252)
+    assert dragged.iloc[-1] == pytest.approx(10 * (1 - 0.0001) ** 252)

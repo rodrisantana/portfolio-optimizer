@@ -2,23 +2,28 @@
 
 [![CI](https://github.com/rodrisantana/portfolio-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrisantana/portfolio-optimizer/actions/workflows/ci.yml)
 
-An interactive tool to design and stress-test a long-only investment portfolio from the point of view of a
-euro-based retail investor. It started as a plain Markowitz optimiser and now covers the whole workflow:
+An interactive tool, in **English and Spanish**, to design, test and plan a long-term investment portfolio from
+the point of view of a euro-based retail investor. It started as a plain Markowitz optimiser and now covers the
+whole workflow:
 
-* **Real instruments.** UCITS ETFs, physical ETCs (gold, silver), crypto ETNs and **index funds resolved from
-  their ISIN** (Vanguard, Fidelity, Amundi, iShares), plus any Yahoo ticker or your own NAV history as a CSV.
-* **Multi-currency.** Every price is converted to your base currency with daily FX, and LSE quotes in pence (GBp)
-  are fixed automatically, so the results include the currency risk you actually bear.
-* **Robust estimation.** Bayes-Stein shrinkage of expected returns, Ledoit-Wolf shrinkage of the covariance, weekly
-  returns to avoid the non-synchronous-close bias between exchanges.
-* **Seven allocation methods.** Maximum Sharpe, minimum variance, maximum diversification, risk parity, hierarchical
-  risk parity (HRP), inverse volatility and equal weight, with per-asset caps and asset-class limits.
-* **Honest testing.** Walk-forward backtests that only use past data at each rebalance, with trading costs and TERs.
-* **Planning.** Monte Carlo projection (log-normal, fat-tailed Student-t or historical block bootstrap) with monthly
-  contributions or withdrawals, inflation and fees, plus the monthly saving needed to reach a goal.
-* **Your own portfolio.** Compare it with the efficient frontier, see where its risk comes from and get a rebalancing
-  plan that uses new cash first, with an estimate of the Spanish tax (IRPF) on any sale and tax-free *traspasos*
-  between index funds.
+* **Every kind of product.** UCITS ETFs, physical ETCs (gold, silver), crypto ETNs, **passive index funds** (Vanguard,
+  Fidelity, iShares, the Amundi range sold at Openbank) and **actively managed funds** (Cobas, Azvalor, Magallanes,
+  Bestinver, True Value, Fundsmith, Carmignac, DWS, Comgest...), all found by ISIN. Funds Yahoo does not cover are
+  simulated from an ETF (or blend of ETFs) on the same index minus the fee difference, and you can add your own.
+* **Long-term forecasts.** Expected returns come from forward-looking capital market assumptions per asset class and
+  region, net of each fund's TER, with an optional alpha for active managers (zero by default, as the SPIVA evidence
+  suggests). Historical, EWMA and Bayes-Stein estimates are there for comparison.
+* **Allocation breakdowns.** Equity / fixed income / money market / commodities / crypto (look-through for mixed
+  funds), region, active vs passive management, and vehicle (ETF, ETC, index fund, active fund...).
+* **Multi-currency.** Prices are converted to your base currency with daily FX and LSE quotes in pence are fixed.
+* **Seven allocation methods.** Maximum Sharpe, minimum variance, maximum diversification, risk parity, HRP, inverse
+  volatility and equal weight, with per-asset caps and limits per asset class or on active funds.
+* **Savings plan.** Expected path with monthly contributions, plus a Monte Carlo (log-normal, Student-t or historical
+  bootstrap) with inflation, withdrawals and the monthly saving needed to reach a goal.
+* **Honest testing.** Walk-forward backtests that only use past data, and the money-weighted return (IRR) of investing
+  every month over the same period.
+* **Your own portfolio.** Compare it with the efficient frontier and get a rebalancing plan that uses new cash first,
+  with an estimate of the Spanish tax (IRPF) on any sale and tax-free *traspasos* between funds.
 
 ![Efficient frontier](docs/img/frontier.png)
 
@@ -29,7 +34,7 @@ git clone https://github.com/rodrisantana/portfolio-optimizer.git
 cd portfolio-optimizer
 pip install -r requirements.txt
 
-streamlit run app.py          # interactive app
+streamlit run app.py          # interactive app (Spanish by default, add ?lang=en for English)
 python main.py                # command-line run + HTML report in outputs/
 python main.py --demo         # same, fully offline with the bundled dataset
 ```
@@ -41,15 +46,15 @@ Your own universe, settings and holdings can be saved the same way.
 
 | Tab | What it answers |
 |---|---|
-| **Overview** | Performance, drawdowns, correlations and calendar-year returns of each asset, all in your base currency. TERs are editable. |
-| **Optimiser** | Efficient frontier with the capital market line, every strategy side by side, weights, and capital weight vs. risk contribution. You can override expected returns with your own assumptions. |
-| **My portfolio** | Where your current portfolio sits, how much return you leave on the table at the same risk, and the trades to reach a target (cash-only or full rebalance, with tax estimate). |
-| **Backtest** | Out-of-sample walk-forward comparison against a buy-and-hold benchmark: CAGR, Sharpe, Sortino, max drawdown, CVaR, beta, tracking error, turnover. |
-| **Monte Carlo** | Fan chart of future wealth in today's money, probability of reaching a goal or running out of money, and the contribution required. |
+| **Overview** | Instruments with editable type, management, class, region and TER; performance, drawdowns, correlations and calendar-year returns in your base currency. |
+| **Optimiser** | Editable long-term assumptions, efficient frontier, every strategy side by side (including its share in active funds), weights, allocation breakdowns and risk contributions. |
+| **My portfolio** | Where your portfolio sits, how much return you leave on the table at the same risk, its breakdown vs a target, and the trades to get there with a tax estimate. |
+| **Savings plan** | Year-by-year expected path with monthly contributions and a Monte Carlo fan chart in today's money, with the probability of reaching a goal. |
+| **Backtest** | Walk-forward comparison against a buy-and-hold benchmark and the IRR of a monthly investing plan over the same years. |
 
 <p>
+  <img src="docs/img/savings_plan.png" width="49%" alt="Savings plan with monthly contributions">
   <img src="docs/img/backtest.png" width="49%" alt="Walk-forward backtest">
-  <img src="docs/img/montecarlo.png" width="49%" alt="Monte Carlo projection">
 </p>
 
 ## Methods
@@ -59,8 +64,14 @@ For weights $w$, expected returns $\mu$ and covariance matrix $\Sigma$ (annualis
 $$\mu_p = w^\top \mu, \qquad \sigma_p^2 = w^\top \Sigma w, \qquad S = \frac{\mu_p - r_f}{\sigma_p}$$
 
 **Expected returns.** The sample mean is the noisiest input in portfolio theory: with eight years of data its standard
-error for an equity ETF is about 6% a year. The default is the Bayes-Stein estimator (Jorion, 1986), which pulls each
-mean towards the return of the minimum-variance portfolio:
+error for an equity ETF is about 6% a year. The default is therefore a set of long-term capital market assumptions
+(editable in the app):
+
+$$E[r_i] = \sum_c e_{i,c}\,\mathrm{CMA}(c, \text{region}_i) - \mathrm{TER}_i + \alpha_i$$
+
+where $e_{i,c}$ is the share of asset class $c$ in the instrument (look-through for mixed funds) and $\alpha_i$ is
+the expected alpha of active funds, zero by default. For history-based estimates the app also offers the Bayes-Stein
+estimator (Jorion, 1986), which pulls each mean towards the return of the minimum-variance portfolio:
 
 $$\hat\mu_{BS} = (1-\phi)\,\hat\mu + \phi\,\mu_0\mathbf{1}, \qquad
 \phi = \frac{N+2}{(N+2) + T(\hat\mu-\mu_0\mathbf{1})^\top S^{-1}(\hat\mu-\mu_0\mathbf{1})}$$
@@ -96,8 +107,12 @@ checks). The test suite checks the results against closed-form solutions and bru
 
 ```
 portfolio_optimizer/
-├── catalog.py      curated ETFs, ETCs and index funds (tickers verified on Yahoo, ISIN, TER, proxy)
-├── data.py         download, ISIN resolution, FX conversion, bad-tick filter, alignment, caching
+├── catalog.py      ETFs, ETCs, index and active funds (verified on Yahoo) with class, region, management, TER, proxy
+├── data.py         download, ISIN resolution, FX, bad-tick filter, proxy backfill and simulated funds, caching
+├── assumptions.py  long-term capital market assumptions and expected returns net of fees
+├── breakdown.py    allocation by asset class, region, management and vehicle
+├── planning.py     expected path with monthly contributions, historical monthly investing, IRR
+├── i18n.py         English / Spanish interface
 ├── estimators.py   historical / EWMA / Bayes-Stein means; sample / Ledoit-Wolf / EWMA covariance
 ├── optimizer.py    mean-variance, risk parity, HRP, frontier, constraints, risk contributions
 ├── metrics.py      CAGR, Sharpe, Sortino, drawdowns, VaR / CVaR, beta, tracking error
@@ -130,8 +145,9 @@ The app runs on [Streamlit Community Cloud](https://streamlit.io/cloud) for free
 * Expected returns cannot be estimated precisely from a few years of data. The app shows the standard error of
   each estimate and lets you type your own assumptions; use them.
 * Yahoo Finance is free but not perfect: some European listings have gaps or bad prints (a filter removes one-day
-  spikes) and fund histories only start in 2018. Prefer accumulating share classes, whose prices already include
-  dividends.
+  spikes) and fund histories only start in 2018 (2022 for Amundi). Older years and uncovered funds use a proxy, which
+  the app always labels. Prefer accumulating share classes, whose prices already include dividends.
+* The long-term assumptions are round, editable numbers, not a forecast from any specific asset manager.
 * The tax estimate uses average cost and ignores loss offsetting. This project is a learning and analysis tool, not
   financial or tax advice.
 

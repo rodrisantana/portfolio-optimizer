@@ -142,7 +142,7 @@ canvas { width: 100%; height: 320px; display: block; }
 <body>
 <div class="wrap">
   <header class="top">
-    <span class="eyebrow">portfolio-optimizer · v2.0 · guía del proyecto</span>
+    <span class="eyebrow">portfolio-optimizer · v2.1 · guía del proyecto</span>
     <h1>Cómo funciona Portfolio Lab</h1>
     <p class="lede">Un recorrido por el código y las ideas del proyecto: de dónde salen los datos, qué calcula cada módulo,
       por qué se tomaron ciertas decisiones y qué puedes mejorar a partir de aquí. Los tres paneles interactivos
@@ -189,14 +189,14 @@ ruff check .</pre>
     <p class="prose">Cada paso consume la salida del anterior. Todo lo que va después de la descarga es pandas y NumPy
       puro, por eso los tests pueden ejecutarse sin conexión.</p>
     <div class="flow">
-      <div class="node"><b>Identificador</b><span class="file">catalog.py</span><p>Ticker de Yahoo o ISIN. El catálogo trae más de 40 productos verificados, con TER y proxy.</p></div>
+      <div class="node"><b>Identificador</b><span class="file">catalog.py</span><p>Ticker o ISIN. Unos 60 productos verificados: ETFs, ETCs, fondos indexados y activos, clasificados por clase, región y gestión.</p></div>
       <div class="node"><b>Precios</b><span class="file">data.py</span><p>ISIN a símbolo, histórico ajustado por dividendos, caché en disco.</p></div>
       <div class="node"><b>Moneda base</b><span class="file">data.py</span><p>GBp a GBP, conversión diaria con el FX, filtro de precios erróneos, alineación.</p></div>
-      <div class="node"><b>Estimación</b><span class="file">estimators.py</span><p>Rentabilidad esperada μ y covarianza Σ anualizadas, con shrinkage.</p></div>
+      <div class="node"><b>Estimación</b><span class="file">assumptions.py</span><p>μ con previsiones a largo plazo netas de TER; Σ histórica con shrinkage.</p></div>
       <div class="node"><b>Carteras</b><span class="file">optimizer.py</span><p>Siete métodos de asignación, frontera eficiente y contribución al riesgo.</p></div>
       <div class="node"><b>Validación</b><span class="file">backtest.py</span><p>Walk-forward fuera de muestra con costes y TER.</p></div>
-      <div class="node"><b>Futuro</b><span class="file">montecarlo.py</span><p>Miles de trayectorias con aportaciones, inflación y comisiones.</p></div>
-      <div class="node"><b>Tu cartera</b><span class="file">holdings.py</span><p>Pesos actuales, plan de rebalanceo e IRPF estimado.</p></div>
+      <div class="node"><b>Plan de ahorro</b><span class="file">planning.py</span><p>Senda esperada con aportaciones mensuales y Monte Carlo con miles de trayectorias.</p></div>
+      <div class="node"><b>Tu cartera</b><span class="file">holdings.py</span><p>Desglose por clase, región, gestión y vehículo, plan de rebalanceo e IRPF.</p></div>
     </div>
   </section>
 
@@ -208,6 +208,10 @@ ruff check .</pre>
         <tbody>
           <tr><td>catalog.py</td><td>Lista de ETFs, ETCs y fondos indexados con ISIN, TER y ETF proxy. Valida ISINs con el dígito de control.</td><td><code>CATALOG</code>, <code>PRESETS</code>, <code>is_isin</code></td></tr>
           <tr><td>data.py</td><td>Descarga, resolución de ISIN, conversión de divisa, limpieza, alineación de calendarios y lectura de CSV de valores liquidativos.</td><td><code>load_prices</code>, <code>to_base_currency</code>, <code>remove_spikes</code>, <code>backfill_with_proxy</code></td></tr>
+          <tr><td>assumptions.py</td><td>Hipótesis a largo plazo por clase de activo y región. Calcula la rentabilidad esperada de cada producto restando su TER y sumando el alfa de los fondos activos.</td><td><code>DEFAULT_CMA</code>, <code>long_term_returns</code></td></tr>
+          <tr><td>breakdown.py</td><td>Desglose de cualquier cartera por clase de activo (los mixtos según su composición), región, gestión activa o pasiva y vehículo.</td><td><code>breakdown</code></td></tr>
+          <tr><td>planning.py</td><td>Senda esperada con aportaciones mensuales, inversión mensual histórica y TIR.</td><td><code>projection_table</code>, <code>historical_dca</code>, <code>xirr</code></td></tr>
+          <tr><td>i18n.py</td><td>Traducciones de la interfaz al español. Si falta una cadena, se ve en inglés en vez de romperse.</td><td><code>t</code>, <code>untranslate</code></td></tr>
           <tr><td>estimators.py</td><td>Medias histórica, EWMA y Bayes-Stein. Covarianza muestral, Ledoit-Wolf y EWMA.</td><td><code>bayes_stein_mean</code>, <code>ledoit_wolf_cov</code></td></tr>
           <tr><td>optimizer.py</td><td>Mínima varianza, máximo Sharpe, máxima diversificación, risk parity, HRP, frontera, restricciones por activo y por clase.</td><td><code>PortfolioOptimizer._max_ratio</code>, <code>risk_parity</code>, <code>hierarchical_risk_parity</code></td></tr>
           <tr><td>metrics.py</td><td>CAGR, volatilidad, Sharpe, Sortino, drawdown, VaR y CVaR, beta, tracking error.</td><td><code>summary</code></td></tr>
@@ -344,6 +348,9 @@ ruff check .</pre>
       <div class="item"><span class="tag">data.py</span><h3>Peniques y precios erróneos</h3><p>Los ETCs de Londres cotizan en GBp (céntimos de libra). Sin dividir entre 100 el oro parecería cien veces más caro. Los saltos de un día que se revierten al siguiente se eliminan como errores de Yahoo.</p></div>
       <div class="item"><span class="tag">data.py</span><h3>Fondos con poco histórico</h3><p>Yahoo solo tiene datos de los fondos indexados desde 2018. Se pueden alargar hacia atrás con un ETF del mismo índice, empalmado sin saltos.</p></div>
       <div class="item"><span class="tag">backtest.py</span><h3>Walk-forward</h3><p>La frontera dentro de muestra siempre parece buena porque se ajustó a esos mismos datos. En el backtest cada rebalanceo solo ve el pasado, así que el resultado sí se puede comparar con un índice.</p></div>
+      <div class="item"><span class="tag">assumptions.py</span><h3>Previsiones a largo plazo</h3><p>El periodo 2019-2026 fue excepcional para la bolsa americana y malo para los bonos. Extrapolarlo da rentabilidades del 12 % o más. Por eso la app usa hipótesis por clase de activo, editables, del orden de las que publican las grandes gestoras.</p></div>
+      <div class="item"><span class="tag">catalog.py</span><h3>Activa frente a pasiva</h3><p>Un fondo activo recibe la misma previsión que su mercado menos su TER, más el alfa que tú decidas (cero por defecto). Es lo que dicen los informes SPIVA: antes de costes el gestor medio iguala al mercado, así que después de costes pierde lo que cobra de más.</p></div>
+      <div class="item"><span class="tag">data.py</span><h3>Fondos que Yahoo no tiene</h3><p>Muchos fondos de Amundi, Carmignac o Comgest aparecen sin histórico. Se simulan como su índice (o una mezcla de ETFs) menos la diferencia de comisiones, y la app lo indica en la columna Datos. Tú puedes añadir los tuyos con un ISIN y un proxy.</p></div>
       <div class="item"><span class="tag">holdings.py</span><h3>Fiscalidad española</h3><p>Vender un ETF tributa entre el 19 % y el 30 % de la ganancia; mover dinero entre fondos por traspaso no. El plan de rebalanceo usa primero el dinero nuevo y estima el IRPF si permites ventas.</p></div>
     </div>
   </section>
@@ -354,6 +361,7 @@ ruff check .</pre>
       <p>Ideas ordenadas de menor a mayor esfuerzo, por si quieres seguir ampliándolo:</p>
       <ul class="stack" style="padding-left:1.1em;margin:0">
         <li><b>Publicarlo.</b> Streamlit Community Cloud lo despliega gratis desde el repositorio; un enlace en el CV pesa más que una captura.</li>
+        <li><b>Fichas de fondos reales.</b> Leer la composición de cada fondo mixto desde su ficha en lugar de suponerla.</li>
         <li><b>Importar movimientos del bróker.</b> Leer el CSV de MyInvestor, Trade Republic o Interactive Brokers y calcular el coste medio por lote con FIFO, que es lo que aplica Hacienda.</li>
         <li><b>Black-Litterman.</b> Partir de los pesos de mercado y añadir tus opiniones con un nivel de confianza; es la forma estándar en la industria de evitar medias históricas.</li>
         <li><b>Optimizar CVaR.</b> Minimizar la pérdida media en el peor 5 % de escenarios en lugar de la varianza, con programación lineal.</li>

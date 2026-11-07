@@ -19,6 +19,7 @@ packages = ["portfolio_optimizer"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 130

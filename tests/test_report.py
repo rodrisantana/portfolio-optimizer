@@ -1,8 +1,12 @@
+from pathlib import Path
+
 from portfolio_optimizer.report import load_config, run, write_report
+
+CONFIG = Path(__file__).resolve().parent.parent / "config.toml"
 
 
 def test_offline_end_to_end(tmp_path):
-    cfg = load_config("config.toml")
+    cfg = load_config(CONFIG)
     cfg["universe"]["offline_demo"] = True
     cfg["universe"]["assets"] = ["EUNL.DE", "IS3N.DE", "SXRQ.DE", "4GLD.DE"]
     cfg["constraints"].pop("groups", None)

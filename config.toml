@@ -2,7 +2,7 @@
 # Identifiers can be Yahoo tickers or ISINs (index funds are resolved automatically).
 
 [universe]
-assets = ["EUNL.DE", "IS3N.DE", "IE00B42W4L06", "VGEA.DE", "EUNA.DE", "4GLD.DE"]
+assets = ["EUNL.DE", "IS3N.DE", "IE00B42W4L06", "LU0996182563", "VGEA.DE", "EUNA.DE", "4GLD.DE"]
 base_currency = "EUR"
 start = "2015-01-01"
 # end = "2026-10-31"          # optional, defaults to today
@@ -11,7 +11,8 @@ offline_demo = false          # true = use data/demo_prices.csv, no internet nee
 
 [estimation]
 frequency = "weekly"          # daily | weekly | monthly
-expected_returns = "bayes_stein"   # historical | ewma | bayes_stein
+expected_returns = "long_term"     # long_term | bayes_stein | historical | ewma
+active_alpha = 0.0                 # extra return expected from active funds before fees
 covariance = "ledoit_wolf"    # sample | ledoit_wolf | ewma
 risk_free_rate = 0.015
 
@@ -36,7 +37,8 @@ portfolio = "Maximum Sharpe"
 initial = 10000
 monthly_contribution = 300
 years = 20
-expected_return = 0.06        # set your own forward-looking assumption; remove to use the model estimate
+# expected_return = 0.06      # uncomment to override the model's long-term estimate (net of TER)
+extra_costs = 0.0             # platform / custody fees; fund TERs are already in the expected return
 inflation = 0.02
 method = "student_t"          # lognormal | student_t | bootstrap
 simulations = 10000

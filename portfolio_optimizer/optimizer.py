@@ -30,10 +30,17 @@ CONSTRAINED = {"Maximum Sharpe", "Minimum variance", "Maximum diversification"}
 
 @dataclass
 class GroupLimit:
+    """Limit on the combined weight of a group of assets.
+
+    With ``exposure`` the group is look-through: a 40/60 mixed fund counts 40%
+    of its weight towards an equity limit and 60% towards a bond limit.
+    """
+
     name: str
     members: list[str]
     lower: float = 0.0
     upper: float = 1.0
+    exposure: dict[str, float] | None = None
 
 
 @dataclass
@@ -53,7 +60,8 @@ class Constraints:
     def group_matrix(self, assets: list[str]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         if not self.groups:
             return np.zeros((0, len(assets))), np.zeros(0), np.zeros(0)
-        a = np.array([[1.0 if x in g.members else 0.0 for x in assets] for g in self.groups])
+        a = np.array([[(g.exposure or {}).get(x, 1.0) if x in g.members else 0.0 for x in assets]
+                      for g in self.groups])
         return a, np.array([g.lower for g in self.groups]), np.array([g.upper for g in self.groups])
 
 

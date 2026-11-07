@@ -11,6 +11,7 @@ import pandas as pd
 
 from . import charts, estimators
 from . import metrics as M
+from .assumptions import long_term_returns
 from .backtest import lookback_start, run_backtest, static_weights, walk_forward
 from .catalog import describe
 from .data import PERIODS_PER_YEAR, PriceData, load_demo, load_prices, to_returns
@@ -49,7 +50,13 @@ def run(config: dict) -> RunResult:
     freq = e.get("frequency", "weekly")
     ppy = PERIODS_PER_YEAR[freq]
     rets = to_returns(prices, freq)
-    mu = estimators.expected_returns(rets, ppy, e.get("expected_returns", "bayes_stein"))
+    method = e.get("expected_returns", "long_term")
+    if method == "long_term":
+        insts = {describe(x).display: describe(x) for x in data.prices.columns}
+        mu = long_term_returns(insts, active_alpha=float(e.get("active_alpha", 0.0))).reindex(prices.columns)
+    else:
+        mu = estimators.expected_returns(rets, ppy, method)
+    hist_method = "bayes_stein" if method == "long_term" else method
     cov = estimators.nearest_psd(estimators.covariance(rets, ppy, e.get("covariance", "ledoit_wolf")))
     rf = float(e.get("risk_free_rate", 0.02))
     label = {x: describe(x).display for x in data.prices.columns}
@@ -70,7 +77,7 @@ def run(config: dict) -> RunResult:
             curves = {}
             for name in b.get("strategies", ["Maximum Sharpe", "Equal weight"]):
                 fn = (static_weights(portfolios[name].weights) if name == "Equal weight" else
-                      walk_forward(name, lb, freq, e.get("expected_returns", "bayes_stein"),
+                      walk_forward(name, lb, freq, hist_method,
                                    e.get("covariance", "ledoit_wolf"), rf, cons))
                 curves[name] = run_backtest(prices, fn, name, b.get("rebalance", "Quarterly"), start,
                                             float(b.get("cost_bps", 10))).wealth
@@ -81,10 +88,9 @@ def run(config: dict) -> RunResult:
     m = config.get("montecarlo")
     if m:
         p = portfolios[m.get("portfolio", "Maximum Sharpe")]
-        ter = pd.Series({label[x]: describe(x).ter for x in data.prices.columns})
         inp = SimulationInput(initial=m.get("initial", 10_000), monthly_contribution=m.get("monthly_contribution", 0),
                               years=int(m.get("years", 20)), expected_return=m.get("expected_return", p.expected_return),
-                              volatility=m.get("volatility", p.volatility), annual_fee=float(p.weights @ ter),
+                              volatility=m.get("volatility", p.volatility), annual_fee=float(m.get("extra_costs", 0.0)),
                               inflation=m.get("inflation", 0.02), method=m.get("method", "lognormal"),
                               n_sims=int(m.get("simulations", 5000)), target=m.get("goal"))
         hist = to_returns(prices, "monthly") @ p.weights.values

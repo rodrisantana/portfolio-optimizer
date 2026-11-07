@@ -19,6 +19,19 @@ INK = "#52514e"
 GRID = "rgba(137,135,129,0.22)"
 FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif'
 
+_translate = None
+
+
+def set_translator(fn) -> None:
+    """Install a function that translates user-visible chart labels (identity by default)."""
+    global _translate
+    _translate = fn
+
+
+def _t(text: str) -> str:
+    return _translate(text) if _translate else text
+
+
 STRATEGY_COLORS = {
     "Maximum Sharpe": PALETTE[0],
     "Minimum variance": PALETTE[1],
@@ -62,14 +75,15 @@ def efficient_frontier(frontier, portfolios: dict, asset_mu: pd.Series, asset_vo
     fig = go.Figure()
     if cloud is not None and len(cloud):
         fig.add_trace(go.Scattergl(
-            x=cloud["Volatility"], y=cloud["Return"], mode="markers", name="Random portfolios",
+            x=cloud["Volatility"], y=cloud["Return"], mode="markers", name=_t("Random portfolios"),
             marker=dict(size=4, color=MUTED, opacity=0.18), hoverinfo="skip"))
     fx = [p.volatility for p in frontier]
     fy = [p.expected_return for p in frontier]
     fig.add_trace(go.Scatter(
-        x=fx, y=fy, mode="lines", name="Efficient frontier", line=dict(color=INK, width=2.5),
+        x=fx, y=fy, mode="lines", name=_t("Efficient frontier"), line=dict(color=INK, width=2.5),
         customdata=np.array([[p.sharpe] for p in frontier]),
-        hovertemplate="Volatility %{x:.1%}<br>Return %{y:.1%}<br>Sharpe %{customdata[0]:.2f}<extra>Frontier</extra>"))
+        hovertemplate=(_t("Volatility") + " %{x:.1%}<br>" + _t("Return") + " %{y:.1%}<br>Sharpe "
+                       "%{customdata[0]:.2f}<extra></extra>")))
 
     tangency = portfolios.get("Maximum Sharpe")
     if tangency is not None and tangency.volatility > 0:
@@ -77,31 +91,31 @@ def efficient_frontier(frontier, portfolios: dict, asset_mu: pd.Series, asset_vo
         slope = (tangency.expected_return - risk_free_rate) / tangency.volatility
         fig.add_trace(go.Scatter(
             x=[0, xmax], y=[risk_free_rate, risk_free_rate + slope * xmax], mode="lines",
-            name="Capital market line", line=dict(color=MUTED, width=1.5, dash="dot"), hoverinfo="skip"))
+            name=_t("Capital market line"), line=dict(color=MUTED, width=1.5, dash="dot"), hoverinfo="skip"))
 
     colors = asset_colors or color_map(list(asset_mu.index))
     fig.add_trace(go.Scatter(
-        x=asset_vol.values, y=asset_mu.values, mode="markers+text", name="Assets",
+        x=asset_vol.values, y=asset_mu.values, mode="markers+text", name=_t("Assets"),
         text=list(asset_mu.index), textposition="top center", textfont=dict(size=10, color=INK),
         marker=dict(size=9, color=[colors.get(a, MUTED) for a in asset_mu.index],
                     line=dict(width=2, color="white")),
-        hovertemplate="<b>%{text}</b><br>Volatility %{x:.1%}<br>Return %{y:.1%}<extra></extra>"))
+        hovertemplate="<b>%{text}</b><br>" + _t("Volatility") + " %{x:.1%}<br>" + _t("Return") + " %{y:.1%}<extra></extra>"))
 
     cmap = color_map(list(portfolios))
     for name, p in portfolios.items():
         fig.add_trace(go.Scatter(
-            x=[p.volatility], y=[p.expected_return], mode="markers", name=name,
+            x=[p.volatility], y=[p.expected_return], mode="markers", name=_t(name),
             marker=dict(size=15, symbol="diamond" if name != "My portfolio" else "star",
                         color=cmap[name], line=dict(width=2, color="white")),
-            hovertemplate=(f"<b>{name}</b><br>Volatility %{{x:.1%}}<br>Return %{{y:.1%}}"
+            hovertemplate=(f"<b>{_t(name)}</b><br>{_t('Volatility')} %{{x:.1%}}<br>{_t('Return')} %{{y:.1%}}"
                            f"<br>Sharpe {p.sharpe:.2f}<extra></extra>")))
     fig = _layout(fig, "", 520, pct_y=True, pct_x=True)
     xmax = max(max(fx), float(asset_vol.max())) * 1.12          # room for the asset labels
     ys = list(fy) + list(asset_mu.values) + [risk_free_rate]
     pad = (max(ys) - min(ys)) * 0.08
-    fig.update_xaxes(title="Annualised volatility", range=[0, xmax])
+    fig.update_xaxes(title=_t("Annualised volatility"), range=[0, xmax])
     fig.update_yaxes(range=[min(ys) - pad, max(ys) + pad])
-    fig.update_yaxes(title="Expected annual return")
+    fig.update_yaxes(title=_t("Expected annual return"))
     return fig
 
 
@@ -112,9 +126,9 @@ def weights_bars(weights: pd.DataFrame, colors: dict[str, str] | None = None, he
     fig = go.Figure()
     for col in weights.columns:
         fig.add_trace(go.Bar(
-            y=weights.index, x=weights[col], name=col, orientation="h", marker_color=cmap.get(col, MUTED),
+            y=weights.index, x=weights[col], name=_t(col), orientation="h", marker_color=cmap.get(col, MUTED),
             marker_line_width=0,
-            hovertemplate=f"<b>{col}</b><br>%{{y}}: %{{x:.1%}}<extra></extra>"))
+            hovertemplate=f"<b>{_t(col)}</b><br>%{{y}}: %{{x:.1%}}<extra></extra>"))
     fig.update_layout(barmode="group", bargap=0.25, bargroupgap=0.08)
     fig = _layout(fig, "", max(height, 60 + 28 * len(weights) * max(1, len(weights.columns)) // 2), pct_x=True)
     fig.update_yaxes(autorange="reversed")
@@ -136,10 +150,10 @@ def allocation_bar(weights: pd.Series, colors: dict[str, str], title: str = "") 
 def risk_vs_weight(weights: pd.Series, risk: pd.Series) -> go.Figure:
     idx = weights[(weights > 1e-4) | (risk.abs() > 1e-4)].index
     fig = go.Figure()
-    fig.add_trace(go.Bar(y=idx, x=weights[idx], name="Capital weight", orientation="h",
-                         marker_color=PALETTE[0], hovertemplate="%{y}: %{x:.1%} of capital<extra></extra>"))
-    fig.add_trace(go.Bar(y=idx, x=risk[idx], name="Risk contribution", orientation="h",
-                         marker_color=PALETTE[1], hovertemplate="%{y}: %{x:.1%} of risk<extra></extra>"))
+    fig.add_trace(go.Bar(y=idx, x=weights[idx], name=_t("Capital weight"), orientation="h",
+                         marker_color=PALETTE[0], hovertemplate="%{y}: %{x:.1%}<extra>" + _t("Capital weight") + "</extra>"))
+    fig.add_trace(go.Bar(y=idx, x=risk[idx], name=_t("Risk contribution"), orientation="h",
+                         marker_color=PALETTE[1], hovertemplate="%{y}: %{x:.1%}<extra>" + _t("Risk contribution") + "</extra>"))
     fig.update_layout(barmode="group", bargap=0.3)
     fig = _layout(fig, "", 80 + 44 * len(idx), pct_x=True)
     fig.update_yaxes(autorange="reversed")
@@ -150,9 +164,9 @@ def risk_vs_weight(weights: pd.Series, risk: pd.Series) -> go.Figure:
 def growth_chart(wealth: pd.DataFrame, colors: dict[str, str], log: bool = False, title: str = "") -> go.Figure:
     fig = go.Figure()
     for c in wealth.columns:
-        fig.add_trace(go.Scatter(x=wealth.index, y=wealth[c], name=c, mode="lines",
+        fig.add_trace(go.Scatter(x=wealth.index, y=wealth[c], name=_t(c), mode="lines",
                                  line=dict(width=2, color=colors.get(c, MUTED)),
-                                 hovertemplate=f"<b>{c}</b> %{{y:,.2f}}<extra></extra>"))
+                                 hovertemplate=f"<b>{_t(c)}</b> %{{y:,.2f}}<extra></extra>"))
     fig = _layout(fig, title, 440)
     fig.update_layout(hovermode="x unified")
     if log:
@@ -164,9 +178,9 @@ def drawdown_chart(wealth: pd.DataFrame, colors: dict[str, str]) -> go.Figure:
     dd = wealth / wealth.cummax() - 1
     fig = go.Figure()
     for c in dd.columns:
-        fig.add_trace(go.Scatter(x=dd.index, y=dd[c], name=c, mode="lines",
+        fig.add_trace(go.Scatter(x=dd.index, y=dd[c], name=_t(c), mode="lines",
                                  line=dict(width=1.6, color=colors.get(c, MUTED)),
-                                 hovertemplate=f"<b>{c}</b> %{{y:.1%}}<extra></extra>"))
+                                 hovertemplate=f"<b>{_t(c)}</b> %{{y:.1%}}<extra></extra>"))
     fig = _layout(fig, "", 320, pct_y=True)
     fig.update_layout(hovermode="x unified")
     return fig
@@ -207,7 +221,7 @@ def weights_over_time(weights: pd.DataFrame, colors: dict[str, str]) -> go.Figur
     for c in weights.columns:
         if weights[c].max() < 1e-4:
             continue
-        fig.add_trace(go.Scatter(x=weights.index, y=weights[c], name=c, mode="lines", stackgroup="w",
+        fig.add_trace(go.Scatter(x=weights.index, y=weights[c], name=_t(c), mode="lines", stackgroup="w",
                                  line=dict(width=0.5, color=colors.get(c, MUTED)),
                                  hovertemplate=f"<b>{c}</b> %{{y:.1%}}<extra></extra>"))
     fig = _layout(fig, "", 340, pct_y=True)
@@ -228,20 +242,20 @@ def fan_chart(pct: pd.DataFrame, contributed: np.ndarray, target: float | None =
                                      hoverinfo="skip", showlegend=False))
     fig.add_trace(go.Scatter(x=x, y=pct["P95"], line=dict(width=0), hoverinfo="skip", showlegend=False))
     fig.add_trace(go.Scatter(x=x, y=pct["P5"], fill="tonexty", fillcolor=band.format(a=0.14), line=dict(width=0),
-                             name="5% to 95%", hoverinfo="skip"))
+                             name=_t("5% to 95%"), hoverinfo="skip"))
     fig.add_trace(go.Scatter(x=x, y=pct["P75"], line=dict(width=0), hoverinfo="skip", showlegend=False))
     fig.add_trace(go.Scatter(x=x, y=pct["P25"], fill="tonexty", fillcolor=band.format(a=0.28), line=dict(width=0),
-                             name="25% to 75%", hoverinfo="skip"))
-    fig.add_trace(go.Scatter(x=x, y=pct["P50"], name="Median", line=dict(color=PALETTE[0], width=2.5),
+                             name=_t("25% to 75%"), hoverinfo="skip"))
+    fig.add_trace(go.Scatter(x=x, y=pct["P50"], name=_t("Median"), line=dict(color=PALETTE[0], width=2.5),
                              customdata=np.stack([pct["P5"], pct["P95"], contributed], axis=1),
-                             hovertemplate=("Median %{y:,.0f}<br>P5 %{customdata[0]:,.0f}"
-                                            "<br>P95 %{customdata[1]:,.0f}<br>Contributed %{customdata[2]:,.0f}"
+                             hovertemplate=(_t("Median") + " %{y:,.0f}<br>P5 %{customdata[0]:,.0f}"
+                                            "<br>P95 %{customdata[1]:,.0f}<br>" + _t("Contributed") + " %{customdata[2]:,.0f}"
                                             "<extra></extra>")))
-    fig.add_trace(go.Scatter(x=x, y=contributed, name="Money contributed", line=dict(color=INK, width=1.5, dash="dot"),
+    fig.add_trace(go.Scatter(x=x, y=contributed, name=_t("Money contributed"), line=dict(color=INK, width=1.5, dash="dot"),
                              hoverinfo="skip"))
     if target:
         fig.add_hline(y=target, line=dict(color=PALETTE[1], width=1.5),
-                      annotation_text="Goal", annotation_position="top left")
+                      annotation_text=_t("Goal"), annotation_position="top left")
     fig = _layout(fig, "", 480)
     fig.update_layout(hovermode="x")
     top = float(pct["P95"].max()) * 1.08
@@ -255,15 +269,51 @@ def final_histogram(final: np.ndarray, contributed: float, target: float | None 
     cap = np.percentile(final, 99)
     vals = final[final <= cap]
     fig = go.Figure(go.Histogram(x=vals, nbinsx=60, marker_color=PALETTE[0], marker_line_width=0, opacity=0.85,
-                                 hovertemplate="%{x:,.0f}: %{y} paths<extra></extra>"))
+                                 hovertemplate="%{x:,.0f}: %{y}<extra></extra>"))
     fig.add_vline(x=float(np.median(final)), line=dict(color=INK, width=2),
-                  annotation_text="Median", annotation_position="top")
+                  annotation_text=_t("Median"), annotation_position="top")
     fig.add_vline(x=contributed, line=dict(color=MUTED, width=1.5, dash="dot"),
-                  annotation_text="Contributed", annotation_position="bottom right")
+                  annotation_text=_t("Contributed"), annotation_position="bottom right")
     if target:
-        fig.add_vline(x=target, line=dict(color=PALETTE[1], width=1.5), annotation_text="Goal",
+        fig.add_vline(x=target, line=dict(color=PALETTE[1], width=1.5), annotation_text=_t("Goal"),
                       annotation_position="top right")
     fig = _layout(fig, "", 340, legend=False)
     fig.update_xaxes(tickformat=",.0f")
     fig.update_layout(bargap=0.04)
+    return fig
+
+
+def dca_chart(paths: dict[str, pd.DataFrame], colors: dict[str, str]) -> go.Figure:
+    """Value of a monthly investing plan per strategy, plus the money put in."""
+    fig = go.Figure()
+    first = next(iter(paths.values()))
+    for name, df in paths.items():
+        fig.add_trace(go.Scatter(x=df.index, y=df["Value"], name=_t(name), mode="lines",
+                                 line=dict(width=2, color=colors.get(name, MUTED)),
+                                 hovertemplate=f"<b>{_t(name)}</b> %{{y:,.0f}}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=first.index, y=first["Contributed"], name=_t("Money contributed"), mode="lines",
+                             line=dict(color=INK, width=1.5, dash="dot"),
+                             hovertemplate=_t("Contributed") + " %{y:,.0f}<extra></extra>"))
+    fig = _layout(fig, "", 420)
+    fig.update_layout(hovermode="x unified")
+    fig.update_yaxes(tickformat=",.0f")
+    return fig
+
+
+def projection_chart(table: pd.DataFrame, real: bool) -> go.Figure:
+    """Expected path of a savings plan: contributions vs gains, stacked per year."""
+    value = table["Value (today's money)"] if real else table["Value"]
+    contributed = table["Contributed"]
+    if real:
+        contributed = contributed / (table["Value"] / table["Value (today's money)"])
+    gains = (value - contributed).clip(lower=0)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=table.index, y=contributed, name=_t("Contributed"), marker_color=PALETTE[0],
+                         marker_line_width=0, hovertemplate="%{y:,.0f}<extra>" + _t("Contributed") + "</extra>"))
+    fig.add_trace(go.Bar(x=table.index, y=gains, name=_t("Gains"), marker_color=PALETTE[2], marker_line_width=0,
+                         hovertemplate="%{y:,.0f}<extra>" + _t("Gains") + "</extra>"))
+    fig.update_layout(barmode="stack", bargap=0.25)
+    fig = _layout(fig, "", 380)
+    fig.update_xaxes(title=_t("Year"), dtick=1 if len(table) <= 20 else 5)
+    fig.update_yaxes(tickformat=",.0f")
     return fig

@@ -25,7 +25,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .catalog import describe, is_isin
+from .catalog import CRYPTO, describe, is_isin, parse_proxy
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +49,7 @@ class PriceData:
     currencies: dict[str, str] = field(default_factory=dict)   # original quote currency per column
     resolved: dict[str, str] = field(default_factory=dict)     # identifier -> Yahoo symbol
     backfilled: dict[str, str] = field(default_factory=dict)   # column -> proxy used
+    synthetic: dict[str, str] = field(default_factory=dict)    # column -> proxy it was simulated from
     warnings: list[str] = field(default_factory=list)
 
     @property
@@ -67,8 +68,20 @@ def _yf():
     return yf
 
 
+def _has_history(symbol: str) -> bool:
+    try:
+        return len(_yf().Ticker(symbol).history(period="1y", auto_adjust=True)) >= 100
+    except Exception:
+        return False
+
+
 def resolve_symbol(identifier: str) -> str:
-    """Map an ISIN to the Yahoo symbol of its main listing; tickers pass through."""
+    """Map an ISIN to the Yahoo symbol of a listing that has price history.
+
+    Yahoo often lists the same fund several times (Frankfurt, Munich, its own
+    Morningstar id); some listings have no history at all. Every candidate is
+    tried and the first one with at least a year of prices wins.
+    """
     identifier = identifier.strip()
     if not is_isin(identifier):
         return identifier.upper() if "=" not in identifier else identifier
@@ -76,9 +89,20 @@ def resolve_symbol(identifier: str) -> str:
     mapping = json.loads(cache.read_text()) if cache.exists() else {}
     if identifier in mapping:
         return mapping[identifier]
-    symbol = _yf().Ticker(identifier).ticker
-    if not symbol or symbol == identifier:
-        raise ValueError(f"Yahoo Finance does not know ISIN {identifier}. Upload its NAV history as a CSV instead.")
+    yf = _yf()
+    candidates = []
+    try:
+        candidates.append(yf.Ticker(identifier).ticker)
+    except Exception:
+        pass
+    try:
+        candidates += [q.get("symbol") for q in yf.Search(identifier, max_results=8).quotes]
+    except Exception:
+        pass
+    candidates = [c for c in dict.fromkeys(candidates) if c and c != identifier]
+    symbol = next((c for c in candidates if _has_history(c)), None)
+    if symbol is None:
+        raise ValueError(f"Yahoo Finance has no price history for ISIN {identifier}.")
     mapping[identifier] = symbol
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(mapping, indent=2, sort_keys=True))
@@ -249,6 +273,23 @@ def _looks_dayfirst(col: pd.Series) -> bool:
     return bool(len(firsts)) and firsts.max() > 12
 
 
+def blend_index(components: dict[str, pd.Series], weights: dict[str, float]) -> pd.Series:
+    """Daily-rebalanced blend of several price series, as a price index starting at 100."""
+    df = align(components)
+    rets = df.pct_change().fillna(0.0)
+    w = pd.Series(weights).reindex(df.columns).fillna(0.0)
+    return 100 * (1 + rets @ w.values).cumprod()
+
+
+def apply_fee_drag(prices: pd.Series, annual_fee: float) -> pd.Series:
+    """Deduct an extra annual fee day by day (positive fee lowers the series)."""
+    if not annual_fee:
+        return prices
+    r = prices.pct_change() - annual_fee / 252.0
+    r.iloc[0] = 0.0
+    return prices.iloc[0] * (1 + r).cumprod()
+
+
 def load_demo() -> PriceData:
     """Offline dataset (EUR prices) shipped with the repo, used by tests and as a fallback."""
     df = pd.read_csv(DEMO_PATH, index_col=0, parse_dates=True)
@@ -257,6 +298,32 @@ def load_demo() -> PriceData:
 
 
 # --------------------------------------------------------------------------- orchestration
+def _to_base(series: pd.Series, ccy: str, base: str, fx_cache: dict, refresh: bool) -> tuple[pd.Series, str]:
+    series, ccy = normalise_minor_units(series, ccy)
+    if ccy != base:
+        if ccy not in fx_cache:
+            fx_cache[ccy] = fetch_fx(base, ccy, refresh=refresh)
+        series = to_base_currency(series, ccy, base, fx_cache[ccy])
+    return series, ccy
+
+
+def proxy_series(spec: str, base: str, fx_cache: dict | None = None, refresh: bool = False) -> tuple[pd.Series, float]:
+    """Price index for a proxy spec (one ticker or a weighted blend) and its weighted TER."""
+    fx_cache = {} if fx_cache is None else fx_cache
+    weights = parse_proxy(spec)
+    parts = {}
+    for sym in weights:
+        s, ccy = fetch_history(sym, refresh=refresh)
+        parts[sym], _ = _to_base(s, ccy, base, fx_cache, refresh)
+    ter = sum(w * describe(sym).ter for sym, w in weights.items())
+    if len(parts) == 1:
+        return next(iter(parts.values())), ter
+    return blend_index(parts, weights), ter
+
+
+MIN_REAL_HISTORY = 252          # below this, a fund with a proxy is simulated instead
+
+
 def load_prices(
     identifiers: list[str],
     base_currency: str = "EUR",
@@ -269,6 +336,13 @@ def load_prices(
 ) -> PriceData:
     """Download, convert and align everything the user selected.
 
+    For an instrument with a ``proxy`` (all catalogue funds, and funds the user
+    adds in the app):
+      * real Yahoo history is used when there is at least a year of it, and
+        the years before its start are backfilled with the proxy;
+      * otherwise the fund is simulated as the proxy minus the fee difference,
+        and it is listed in ``PriceData.synthetic``.
+
     ``uploaded`` holds user-supplied price columns, assumed to be in the base
     currency already.
     """
@@ -276,19 +350,22 @@ def load_prices(
     warnings: list[str] = []
     resolved: dict[str, str] = {}
     raw: dict[str, tuple[pd.Series, str]] = {}
+    failed: dict[str, str] = {}
 
     def _get(identifier: str):
+        if " " in identifier:                  # a fund the user named; it lives on its proxy
+            raise ValueError("no Yahoo symbol")
         symbol = resolve_symbol(identifier)
         return identifier, symbol, fetch_history(symbol, refresh=refresh)
 
     if identifiers:
         with ThreadPoolExecutor(max_workers=min(8, len(identifiers))) as pool:
-            futures = [pool.submit(_get, i) for i in identifiers]
-            for f in futures:
+            futures = {i: pool.submit(_get, i) for i in identifiers}
+            for identifier, f in futures.items():
                 try:
-                    identifier, symbol, (series, ccy) = f.result()
-                except Exception as exc:  # report and continue with the rest
-                    warnings.append(f"Skipped: {exc}")
+                    _, symbol, (series, ccy) = f.result()
+                except Exception as exc:
+                    failed[identifier] = str(exc)
                     continue
                 resolved[identifier] = symbol
                 raw[identifier] = (series, ccy)
@@ -297,40 +374,49 @@ def load_prices(
     converted: dict[str, pd.Series] = {}
     currencies: dict[str, str] = {}
     for identifier, (series, ccy) in raw.items():
-        series, ccy = normalise_minor_units(series, ccy)
+        series, ccy = _to_base(series, ccy, base_currency, fx_cache, refresh)
         currencies[identifier] = ccy
-        if ccy != base_currency and ccy not in fx_cache:
-            fx_cache[ccy] = fetch_fx(base_currency, ccy, refresh=refresh)
-        series = to_base_currency(series, ccy, base_currency, fx_cache.get(ccy))
-        if clean_spikes and describe(identifier).asset_class != "Crypto":
+        if clean_spikes and describe(identifier).asset_class != CRYPTO:
             series, n = remove_spikes(series)
             if n:
                 warnings.append(f"{identifier}: removed {n} one-day bad print(s) from the Yahoo data.")
         converted[identifier] = series.rename(identifier)
 
     backfilled: dict[str, str] = {}
-    if backfill:
-        for identifier, series in list(converted.items()):
-            proxy_symbol = describe(identifier).proxy
-            if not proxy_symbol:
-                continue
-            try:
-                proxy, pccy = fetch_history(proxy_symbol, refresh=refresh)
-                proxy, pccy = normalise_minor_units(proxy, pccy)
-                if pccy != base_currency:
-                    proxy = to_base_currency(proxy, pccy, base_currency, fetch_fx(base_currency, pccy))
-                filled = backfill_with_proxy(series, proxy)
-                if filled.index[0] < series.index[0]:
-                    converted[identifier] = filled
-                    backfilled[identifier] = proxy_symbol
-            except Exception as exc:
+    synthetic: dict[str, str] = {}
+    for identifier in identifiers:
+        inst = describe(identifier)
+        series = converted.get(identifier)
+        too_short = series is None or len(series) < MIN_REAL_HISTORY
+        if not inst.proxy or not (backfill or too_short):
+            if series is None:
+                warnings.append(f"Skipped {identifier}: {failed.get(identifier, 'no data')}")
+            continue
+        try:
+            proxy, proxy_ter = proxy_series(inst.proxy, base_currency, fx_cache, refresh)
+        except Exception as exc:
+            if series is None:
+                warnings.append(f"Skipped {identifier}: no data and its proxy failed ({exc}).")
+            else:
                 warnings.append(f"{identifier}: proxy backfill failed ({exc}).")
+            continue
+        if too_short:
+            converted[identifier] = apply_fee_drag(proxy, inst.ter - proxy_ter).rename(identifier)
+            synthetic[identifier] = inst.proxy
+            currencies[identifier] = base_currency
+        else:
+            filled = backfill_with_proxy(series, proxy)
+            if filled.index[0] < series.index[0]:
+                converted[identifier] = filled
+                backfilled[identifier] = inst.proxy
 
     if uploaded is not None and not uploaded.empty:
         for col in uploaded.columns:
             converted[str(col)] = uploaded[col].dropna().rename(str(col))
             currencies[str(col)] = base_currency
 
+    if not converted:
+        raise ValueError("None of the selected assets returned data. " + " ".join(warnings))
     prices = align(converted)
     if start:
         prices = prices.loc[pd.Timestamp(start):]
@@ -340,7 +426,7 @@ def load_prices(
         raise ValueError("The chosen date range leaves fewer than 30 observations.")
     order = [i for i in identifiers if i in prices.columns] + [c for c in prices.columns if c not in identifiers]
     return PriceData(prices=prices[order], base_currency=base_currency, currencies=currencies,
-                     resolved=resolved, backfilled=backfilled, warnings=warnings)
+                     resolved=resolved, backfilled=backfilled, synthetic=synthetic, warnings=warnings)
 
 
 def fingerprint(prices: pd.DataFrame) -> str:
