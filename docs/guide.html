@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guía de Portfolio Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script>
+  window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js" defer></script>
+<style>
+/* Layout: one reading column (68ch) with wider "bench" panels for the live demos; quiet paper, one blue accent. */
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --fg: #141920;
+  --muted: #5b6573;
+  --line: #dde2e9;
+  --accent: #1d62c2;
+  --accent-soft: rgba(29, 98, 194, 0.10);
+  --warm: #d65a24;
+  --good: #0f7b3e;
+  --band1: rgba(29, 98, 194, 0.13);
+  --band2: rgba(29, 98, 194, 0.26);
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --step-0: 1rem;
+  --step-1: 1.2rem;
+  --step-2: 1.55rem;
+  --step-3: 2.1rem;
+  --step-4: clamp(2.2rem, 5vw, 3.3rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1217; --surface: #161b22; --fg: #e7ebf0; --muted: #9ba6b4; --line: #29313b;
+    --accent: #5c9cf0; --accent-soft: rgba(92, 156, 240, 0.14); --warm: #f08a55; --good: #3fbf78;
+    --band1: rgba(92, 156, 240, 0.16); --band2: rgba(92, 156, 240, 0.32); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1217; --surface: #161b22; --fg: #e7ebf0; --muted: #9ba6b4; --line: #29313b;
+  --accent: #5c9cf0; --accent-soft: rgba(92, 156, 240, 0.14); --warm: #f08a55; --good: #3fbf78;
+  --band1: rgba(92, 156, 240, 0.16); --band2: rgba(92, 156, 240, 0.32); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--f-body); font-size: var(--step-0); line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 72px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: var(--step-4); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: var(--step-3); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: var(--step-1); font-weight: 500; }
+p { margin: 0; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--f-mono); font-size: 0.88em; }
+code { background: var(--accent-soft); padding: 0.08em 0.35em; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { padding-block: 56px 32px; display: grid; gap: 18px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-family: var(--f-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: var(--step-1); color: var(--muted); max-width: 60ch; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.92rem; }
+nav.toc a { text-decoration: none; color: var(--fg); border-bottom: 1px solid var(--line); }
+nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+section { padding-block: 56px 8px; display: grid; gap: 20px; }
+.stack { display: grid; gap: 14px; }
+
+pre.cmd {
+  margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-family: var(--f-mono); font-size: 0.86rem; line-height: 1.6;
+}
+pre.cmd .c { color: var(--muted); }
+
+/* pipeline */
+.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; counter-reset: step; }
+.node {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
+  display: grid; gap: 4px; align-content: start; position: relative; min-width: 0;
+}
+.node b { font-family: var(--f-display); font-weight: 500; font-size: 1.02rem; }
+.node .file { font-family: var(--f-mono); font-size: 0.74rem; color: var(--accent); }
+.node p { font-size: 0.86rem; color: var(--muted); line-height: 1.45; }
+.node::before { counter-increment: step; content: counter(step); font-family: var(--f-mono); font-size: 0.72rem; color: var(--muted); }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-family: var(--f-mono); font-size: 0.82rem; color: var(--accent); white-space: nowrap; }
+
+/* demo bench */
+.bench {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  display: grid; grid-template-columns: minmax(0, 290px) minmax(0, 1fr); gap: 0;
+}
+.controls { padding: 18px; border-right: 1px solid var(--line); display: grid; gap: 14px; align-content: start; }
+.plot { padding: 14px 16px 16px; display: grid; gap: 10px; min-width: 0; }
+.ctl { display: grid; gap: 4px; }
+.ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: 0.84rem; }
+.ctl label output { font-family: var(--f-mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+canvas { width: 100%; height: 320px; display: block; }
+.readout { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 0.86rem; color: var(--muted); }
+.readout strong { display: block; font-family: var(--f-mono); font-size: 1.05rem; color: var(--fg); font-variant-numeric: tabular-nums; font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.note { font-size: 0.86rem; color: var(--muted); }
+
+.formula { overflow-x: auto; padding: 4px 0; }
+.callout { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.item { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.item h3 { font-size: 1.02rem; }
+.item p { font-size: 0.9rem; color: var(--muted); }
+.tag { font-family: var(--f-mono); font-size: 0.72rem; color: var(--muted); }
+
+@media (max-width: 720px) {
+  .bench { grid-template-columns: 1fr; }
+  .controls { border-right: 0; border-bottom: 1px solid var(--line); }
+  canvas { height: 260px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<style>body{margin:0}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">portfolio-optimizer · v2.0 · guía del proyecto</span>
+    <h1>Cómo funciona Portfolio Lab</h1>
+    <p class="lede">Un recorrido por el código y las ideas del proyecto: de dónde salen los datos, qué calcula cada módulo,
+      por qué se tomaron ciertas decisiones y qué puedes mejorar a partir de aquí. Los tres paneles interactivos
+      reproducen en pequeño lo que hace la aplicación.</p>
+    <nav class="toc" aria-label="Contenido">
+      <a href="#arrancar">Arrancar</a>
+      <a href="#flujo">El flujo</a>
+      <a href="#modulos">Módulos</a>
+      <a href="#diversificacion">Diversificación</a>
+      <a href="#ruido">El ruido de la media</a>
+      <a href="#optimizacion">Optimización</a>
+      <a href="#montecarlo">Monte Carlo</a>
+      <a href="#decisiones">Decisiones</a>
+      <a href="#siguiente">Siguientes pasos</a>
+    </nav>
+  </header>
+
+  <section id="arrancar">
+    <h2>Arrancar en dos minutos</h2>
+    <div class="prose stack">
+      <p>Hay dos formas de usarlo. La app interactiva es para analizar y jugar con escenarios; el modo consola lee
+        <code>config.toml</code> y genera un informe HTML, útil para dejar un resultado reproducible.</p>
+    </div>
+<pre class="cmd"><span class="c"># instalar</span>
+pip install -r requirements.txt
+
+<span class="c"># app interactiva (se abre en el navegador)</span>
+streamlit run app.py
+
+<span class="c"># informe desde consola: outputs/report.html y outputs/results.md</span>
+python main.py
+python main.py --demo      <span class="c"># sin internet, con el dataset incluido</span>
+
+<span class="c"># tests y estilo</span>
+pytest -q
+ruff check .</pre>
+    <p class="note prose">En la barra lateral de la app puedes cargar <code>examples/sample_session.json</code> para ver todas
+      las pestañas rellenas con una cartera de ejemplo. Cuando metas la tuya, guárdala con el botón de la pestaña
+      <em>My portfolio</em> y la recuperas la próxima vez.</p>
+  </section>
+
+  <section id="flujo">
+    <h2>El flujo de datos</h2>
+    <p class="prose">Cada paso consume la salida del anterior. Todo lo que va después de la descarga es pandas y NumPy
+      puro, por eso los tests pueden ejecutarse sin conexión.</p>
+    <div class="flow">
+      <div class="node"><b>Identificador</b><span class="file">catalog.py</span><p>Ticker de Yahoo o ISIN. El catálogo trae más de 40 productos verificados, con TER y proxy.</p></div>
+      <div class="node"><b>Precios</b><span class="file">data.py</span><p>ISIN a símbolo, histórico ajustado por dividendos, caché en disco.</p></div>
+      <div class="node"><b>Moneda base</b><span class="file">data.py</span><p>GBp a GBP, conversión diaria con el FX, filtro de precios erróneos, alineación.</p></div>
+      <div class="node"><b>Estimación</b><span class="file">estimators.py</span><p>Rentabilidad esperada μ y covarianza Σ anualizadas, con shrinkage.</p></div>
+      <div class="node"><b>Carteras</b><span class="file">optimizer.py</span><p>Siete métodos de asignación, frontera eficiente y contribución al riesgo.</p></div>
+      <div class="node"><b>Validación</b><span class="file">backtest.py</span><p>Walk-forward fuera de muestra con costes y TER.</p></div>
+      <div class="node"><b>Futuro</b><span class="file">montecarlo.py</span><p>Miles de trayectorias con aportaciones, inflación y comisiones.</p></div>
+      <div class="node"><b>Tu cartera</b><span class="file">holdings.py</span><p>Pesos actuales, plan de rebalanceo e IRPF estimado.</p></div>
+    </div>
+  </section>
+
+  <section id="modulos">
+    <h2>Qué hay en cada archivo</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Archivo</th><th>Qué hace</th><th>Funciones que conviene leer primero</th></tr></thead>
+        <tbody>
+          <tr><td>catalog.py</td><td>Lista de ETFs, ETCs y fondos indexados con ISIN, TER y ETF proxy. Valida ISINs con el dígito de control.</td><td><code>CATALOG</code>, <code>PRESETS</code>, <code>is_isin</code></td></tr>
+          <tr><td>data.py</td><td>Descarga, resolución de ISIN, conversión de divisa, limpieza, alineación de calendarios y lectura de CSV de valores liquidativos.</td><td><code>load_prices</code>, <code>to_base_currency</code>, <code>remove_spikes</code>, <code>backfill_with_proxy</code></td></tr>
+          <tr><td>estimators.py</td><td>Medias histórica, EWMA y Bayes-Stein. Covarianza muestral, Ledoit-Wolf y EWMA.</td><td><code>bayes_stein_mean</code>, <code>ledoit_wolf_cov</code></td></tr>
+          <tr><td>optimizer.py</td><td>Mínima varianza, máximo Sharpe, máxima diversificación, risk parity, HRP, frontera, restricciones por activo y por clase.</td><td><code>PortfolioOptimizer._max_ratio</code>, <code>risk_parity</code>, <code>hierarchical_risk_parity</code></td></tr>
+          <tr><td>metrics.py</td><td>CAGR, volatilidad, Sharpe, Sortino, drawdown, VaR y CVaR, beta, tracking error.</td><td><code>summary</code></td></tr>
+          <tr><td>backtest.py</td><td>Simula día a día con pesos que derivan, rebalancea en fechas fijas y reoptimiza mirando solo al pasado.</td><td><code>run_backtest</code>, <code>walk_forward</code></td></tr>
+          <tr><td>montecarlo.py</td><td>Proyección mensual con tres generadores de rentabilidad y cálculo de la aportación necesaria para una meta.</td><td><code>simulate</code>, <code>required_contribution</code></td></tr>
+          <tr><td>holdings.py</td><td>Tu cartera real: plan de rebalanceo solo con dinero nuevo o completo, con IRPF por tramos y traspasos entre fondos.</td><td><code>rebalance_plan</code>, <code>spanish_savings_tax</code></td></tr>
+          <tr><td>charts.py</td><td>Gráficos Plotly compartidos por la app y el informe, con paleta fija por activo.</td><td><code>efficient_frontier</code>, <code>fan_chart</code></td></tr>
+          <tr><td>app.py</td><td>La interfaz Streamlit: barra lateral, seis pestañas y caché de cálculos.</td><td><code>sidebar</code>, <code>get_portfolios</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="diversificacion">
+    <h2>Por qué diversificar funciona</h2>
+    <div class="prose stack">
+      <p>Con dos activos, la volatilidad de la cartera depende de la correlación \(\rho\) entre ellos:</p>
+      <div class="formula">\[\sigma_p^2 = w^2\sigma_1^2 + (1-w)^2\sigma_2^2 + 2\,w(1-w)\,\rho\,\sigma_1\sigma_2\]</div>
+      <p>Si \(\rho = 1\) la curva es una recta y mezclar no reduce riesgo. Cuanto más baja la correlación, más se curva
+        hacia la izquierda y más riesgo eliminas gratis. Mueve los controles y fíjate en el punto de mínima varianza.</p>
+    </div>
+    <div class="bench" aria-label="Demostración de dos activos">
+      <div class="controls">
+        <div class="ctl"><label for="d-mu1">Renta variable: rentabilidad <output id="o-mu1"></output></label><input id="d-mu1" type="range" min="0" max="12" step="0.5" value="7"></div>
+        <div class="ctl"><label for="d-s1">Renta variable: volatilidad <output id="o-s1"></output></label><input id="d-s1" type="range" min="5" max="35" step="1" value="16"></div>
+        <div class="ctl"><label for="d-mu2">Bonos: rentabilidad <output id="o-mu2"></output></label><input id="d-mu2" type="range" min="0" max="8" step="0.25" value="3"></div>
+        <div class="ctl"><label for="d-s2">Bonos: volatilidad <output id="o-s2"></output></label><input id="d-s2" type="range" min="1" max="20" step="0.5" value="6"></div>
+        <div class="ctl"><label for="d-rho">Correlación ρ <output id="o-rho"></output></label><input id="d-rho" type="range" min="-1" max="1" step="0.05" value="0.1"></div>
+      </div>
+      <div class="plot">
+        <div class="legend"><span><i style="background:var(--accent)"></i>Combinaciones posibles</span><span><i style="background:var(--muted)"></i>Si ρ fuera 1</span><span><i style="background:var(--warm)"></i>Mínima varianza</span></div>
+        <canvas id="c-div" aria-label="Curva riesgo-rentabilidad de dos activos"></canvas>
+        <div class="readout">
+          <span>Peso en renta variable (mín. var.)<strong id="r-w">0</strong></span>
+          <span>Volatilidad mínima<strong id="r-v">0</strong></span>
+          <span>Rentabilidad en ese punto<strong id="r-m">0</strong></span>
+          <span>Riesgo eliminado frente a ρ = 1<strong id="r-b">0</strong></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ruido">
+    <h2>El problema de estimar la rentabilidad</h2>
+    <div class="prose stack">
+      <p>La media histórica es el dato más ruidoso de toda la teoría de carteras. Su error estándar es</p>
+      <div class="formula">\[\mathrm{SE}(\hat\mu) = \frac{\sigma}{\sqrt{T}}\]</div>
+      <p>con \(T\) en años. Con 8 años y una volatilidad del 16 %, el intervalo del 95 % para una media real del 7 %
+        va aproximadamente de −4 % a +18 %. El optimizador trata ese número como si fuera exacto y apuesta fuerte por el
+        activo que tuvo suerte. Por eso la app usa Bayes-Stein por defecto, enseña el error estándar al lado de cada
+        estimación y te deja escribir tus propias hipótesis.</p>
+    </div>
+    <div class="bench" aria-label="Demostración del error de estimación">
+      <div class="controls">
+        <div class="ctl"><label for="e-t">Años de datos <output id="o-t"></output></label><input id="e-t" type="range" min="1" max="60" step="1" value="8"></div>
+        <div class="ctl"><label for="e-s">Volatilidad anual <output id="o-es"></output></label><input id="e-s" type="range" min="2" max="60" step="1" value="16"></div>
+        <p class="note">Media real supuesta: 7 %. La barra muestra dónde caerá la media estimada 95 de cada 100 veces.</p>
+      </div>
+      <div class="plot">
+        <canvas id="c-se" aria-label="Intervalo de confianza de la media" style="height:170px"></canvas>
+        <div class="readout">
+          <span>Error estándar<strong id="r-se">0</strong></span>
+          <span>Intervalo del 95 %<strong id="r-ci">0</strong></span>
+          <span>Años para un error del 1 %<strong id="r-yrs">0</strong></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="optimizacion">
+    <h2>Los métodos de optimización</h2>
+    <div class="prose stack">
+      <p>Con pesos \(w\), rentabilidades esperadas \(\mu\) y covarianza \(\Sigma\), todo anualizado:</p>
+      <div class="formula">\[\mu_p = w^\top\mu,\qquad \sigma_p^2 = w^\top\Sigma w,\qquad S = \frac{\mu_p - r_f}{\sigma_p}\]</div>
+      <p><b>Máximo Sharpe.</b> Maximizar un cociente no es convexo, así que un optimizador genérico podría quedarse en un
+        óptimo local. Como \(S\) no cambia si multiplicas todos los pesos por la misma constante, se hace el cambio
+        \(y = \kappa w\) y el problema pasa a ser un QP convexo, también con límites por activo y por clase:</p>
+      <div class="formula">\[\min_y\; y^\top\Sigma y\quad\text{s.a.}\quad (\mu - r_f\mathbf 1)^\top y = 1,\qquad \ell\,\kappa \le y \le u\,\kappa,\qquad \kappa = \mathbf 1^\top y\]</div>
+      <p>Después se recupera \(w = y/\kappa\). Esto está en <code>_max_ratio</code>, y la máxima diversificación reutiliza
+        la misma función cambiando \(\mu - r_f\) por el vector de volatilidades.</p>
+      <p><b>Risk parity.</b> Busca que cada activo aporte la misma parte del riesgo,
+        \(RC_i = w_i(\Sigma w)_i/\sigma_p^2\). Se resuelve con el programa convexo de Spinu,
+        \(\min_y \tfrac12 y^\top\Sigma y - \sum_i b_i\ln y_i\), cuya condición de primer orden es justo
+        \(y_i(\Sigma y)_i = b_i\).</p>
+      <p><b>HRP.</b> Agrupa los activos por similitud (distancia \(d_{ij}=\sqrt{(1-\rho_{ij})/2}\)), los ordena y reparte
+        el capital por bisección según la varianza de cada grupo. No invierte \(\Sigma\), así que no se rompe cuando
+        metes tres ETFs casi idénticos sobre el MSCI World.</p>
+      <p><b>Shrinkage.</b> Ledoit-Wolf mezcla la covarianza muestral \(S\) con una matriz de correlación constante
+        \(F\): \(\hat\Sigma = \delta F + (1-\delta)S\). La intensidad \(\delta\) se calcula a partir de los propios datos.
+        Bayes-Stein hace algo parecido con las medias, acercándolas a la rentabilidad de la cartera de mínima varianza.</p>
+    </div>
+    <div class="callout prose"><p>Los tests comparan estos resultados con soluciones cerradas (mínima varianza y tangente
+      sin restricciones activas) y con una búsqueda aleatoria de 20.000 carteras. Si alguien cambia el código y rompe la
+      optimización, <code>pytest</code> lo detecta.</p></div>
+  </section>
+
+  <section id="montecarlo">
+    <h2>Monte Carlo: el futuro como distribución</h2>
+    <div class="prose stack">
+      <p>Cada mes la cartera crece o cae y luego recibe la aportación:
+        \(V_{t+1} = \max\big(0,\; V_t(1 + r_t - f/12) + C_t\big)\). Para que la media y la volatilidad simuladas coincidan
+        exactamente con las que introduces, los parámetros log-normales se ajustan por momentos:</p>
+      <div class="formula">\[s^2 = \ln\!\Big(1 + \tfrac{\sigma^2}{(1+\mu)^2}\Big),\qquad m = \ln(1+\mu) - \tfrac{s^2}{2}\]</div>
+      <p>La app añade colas gruesas con una t de Student y un bootstrap de bloques de 12 meses reales. Este panel usa la
+        versión log-normal con 1.500 trayectorias y la semilla fija, así que el resultado es reproducible.</p>
+    </div>
+    <div class="bench" aria-label="Simulación de Monte Carlo">
+      <div class="controls">
+        <div class="ctl"><label for="m-v0">Capital inicial <output id="o-v0"></output></label><input id="m-v0" type="range" min="0" max="100000" step="1000" value="20000"></div>
+        <div class="ctl"><label for="m-c">Aportación mensual <output id="o-c"></output></label><input id="m-c" type="range" min="0" max="2000" step="50" value="300"></div>
+        <div class="ctl"><label for="m-y">Años <output id="o-y"></output></label><input id="m-y" type="range" min="1" max="40" step="1" value="20"></div>
+        <div class="ctl"><label for="m-mu">Rentabilidad esperada <output id="o-mu"></output></label><input id="m-mu" type="range" min="0" max="12" step="0.25" value="6"></div>
+        <div class="ctl"><label for="m-s">Volatilidad <output id="o-ms"></output></label><input id="m-s" type="range" min="0" max="30" step="0.5" value="14"></div>
+        <div class="ctl"><label for="m-i">Inflación <output id="o-i"></output></label><input id="m-i" type="range" min="0" max="6" step="0.25" value="2"></div>
+      </div>
+      <div class="plot">
+        <div class="legend"><span><i style="background:var(--accent)"></i>Mediana</span><span><i style="background:var(--band2)"></i>P25 a P75</span><span><i style="background:var(--band1)"></i>P5 a P95</span><span><i style="background:var(--muted)"></i>Dinero aportado</span></div>
+        <canvas id="c-mc" aria-label="Abanico de resultados de Monte Carlo"></canvas>
+        <div class="readout">
+          <span>Mediana (euros de hoy)<strong id="r-med">0</strong></span>
+          <span>Caso malo P5<strong id="r-p5">0</strong></span>
+          <span>Caso bueno P95<strong id="r-p95">0</strong></span>
+          <span>Aportado<strong id="r-con">0</strong></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="decisiones">
+    <h2>Decisiones que conviene saber explicar</h2>
+    <div class="grid2">
+      <div class="item"><span class="tag">data.py</span><h3>Rentabilidades semanales</h3><p>Xetra y Londres cierran a las 17:30 hora española y Nueva York a las 22:00. Con datos diarios las correlaciones salen artificialmente bajas; con semanales el desfase casi desaparece.</p></div>
+      <div class="item"><span class="tag">data.py</span><h3>Todo en tu moneda</h3><p>Un ETF del S&amp;P 500 cotizado en dólares tiene para ti el riesgo del índice más el del EUR/USD. Convertir cada precio con el tipo de cambio diario hace que el análisis mida lo que de verdad te afecta.</p></div>
+      <div class="item"><span class="tag">data.py</span><h3>Peniques y precios erróneos</h3><p>Los ETCs de Londres cotizan en GBp (céntimos de libra). Sin dividir entre 100 el oro parecería cien veces más caro. Los saltos de un día que se revierten al siguiente se eliminan como errores de Yahoo.</p></div>
+      <div class="item"><span class="tag">data.py</span><h3>Fondos con poco histórico</h3><p>Yahoo solo tiene datos de los fondos indexados desde 2018. Se pueden alargar hacia atrás con un ETF del mismo índice, empalmado sin saltos.</p></div>
+      <div class="item"><span class="tag">backtest.py</span><h3>Walk-forward</h3><p>La frontera dentro de muestra siempre parece buena porque se ajustó a esos mismos datos. En el backtest cada rebalanceo solo ve el pasado, así que el resultado sí se puede comparar con un índice.</p></div>
+      <div class="item"><span class="tag">holdings.py</span><h3>Fiscalidad española</h3><p>Vender un ETF tributa entre el 19 % y el 30 % de la ganancia; mover dinero entre fondos por traspaso no. El plan de rebalanceo usa primero el dinero nuevo y estima el IRPF si permites ventas.</p></div>
+    </div>
+  </section>
+
+  <section id="siguiente">
+    <h2>Qué puedes añadir después</h2>
+    <div class="prose stack">
+      <p>Ideas ordenadas de menor a mayor esfuerzo, por si quieres seguir ampliándolo:</p>
+      <ul class="stack" style="padding-left:1.1em;margin:0">
+        <li><b>Publicarlo.</b> Streamlit Community Cloud lo despliega gratis desde el repositorio; un enlace en el CV pesa más que una captura.</li>
+        <li><b>Importar movimientos del bróker.</b> Leer el CSV de MyInvestor, Trade Republic o Interactive Brokers y calcular el coste medio por lote con FIFO, que es lo que aplica Hacienda.</li>
+        <li><b>Black-Litterman.</b> Partir de los pesos de mercado y añadir tus opiniones con un nivel de confianza; es la forma estándar en la industria de evitar medias históricas.</li>
+        <li><b>Optimizar CVaR.</b> Minimizar la pérdida media en el peor 5 % de escenarios en lugar de la varianza, con programación lineal.</li>
+        <li><b>Fase de retirada.</b> Estrategias de retirada variable y probabilidad de que el dinero dure 30 años, que ya se puede aproximar con aportaciones negativas.</li>
+      </ul>
+      <p class="note">Recuerda que es una herramienta para entender compromisos entre riesgo y rentabilidad, no una predicción.
+        Las rentabilidades de 2019 a 2026 fueron excepcionales y proyectarlas tal cual sobreestima el futuro.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const css = () => getComputedStyle(document.documentElement);
+  const tok = (n) => css().getPropertyValue(n).trim();
+  const $ = (id) => document.getElementById(id);
+  const pct = (x, d = 1) => (x * 100).toFixed(d).replace(".", ",") + " %";
+  const eur = (x) => Math.round(x).toLocaleString("es-ES") + " €";
+
+  function setup(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.round(r.width * dpr));
+    canvas.height = Math.max(1, Math.round(r.height * dpr));
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, r.width, r.height);
+    return { ctx, w: r.width, h: r.height };
+  }
+  function niceTicks(lo, hi, n) {
+    const span = hi - lo || 1, raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => span / s <= n) || 10 * mag;
+    const out = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-12; v += step) out.push(+v.toFixed(10));
+    return out;
+  }
+  function axes(ctx, box, xr, yr, fx, fy) {
+    ctx.font = "11px " + tok("--f-mono");
+    ctx.fillStyle = tok("--muted");
+    ctx.strokeStyle = tok("--line");
+    ctx.lineWidth = 1;
+    const X = (v) => box.l + (v - xr[0]) / (xr[1] - xr[0]) * (box.r - box.l);
+    const Y = (v) => box.b - (v - yr[0]) / (yr[1] - yr[0]) * (box.b - box.t);
+    niceTicks(yr[0], yr[1], 5).forEach(v => {
+      ctx.beginPath(); ctx.moveTo(box.l, Y(v) + 0.5); ctx.lineTo(box.r, Y(v) + 0.5); ctx.stroke();
+      ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(fy(v), box.l - 6, Y(v));
+    });
+    niceTicks(xr[0], xr[1], 6).forEach(v => {
+      ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText(fx(v), X(v), box.b + 6);
+    });
+    return { X, Y };
+  }
+
+  /* ---------- 1. two-asset diversification ---------- */
+  function drawDiv() {
+    const mu1 = +$("d-mu1").value / 100, s1 = +$("d-s1").value / 100;
+    const mu2 = +$("d-mu2").value / 100, s2 = +$("d-s2").value / 100, rho = +$("d-rho").value;
+    $("o-mu1").textContent = pct(mu1); $("o-s1").textContent = pct(s1, 0);
+    $("o-mu2").textContent = pct(mu2, 2); $("o-s2").textContent = pct(s2); $("o-rho").textContent = rho.toFixed(2);
+    const vol = (w, r) => Math.sqrt(Math.max(0, w * w * s1 * s1 + (1 - w) * (1 - w) * s2 * s2 + 2 * w * (1 - w) * r * s1 * s2));
+    const ret = (w) => w * mu1 + (1 - w) * mu2;
+    const denom = s1 * s1 + s2 * s2 - 2 * rho * s1 * s2;
+    let wStar = denom > 0 ? (s2 * s2 - rho * s1 * s2) / denom : 0.5;
+    wStar = Math.min(1, Math.max(0, wStar));
+    const { ctx, w, h } = setup($("c-div"));
+    const box = { l: 46, r: w - 10, t: 10, b: h - 26 };
+    const xmax = Math.max(s1, s2) * 1.12, ys = [mu1, mu2];
+    const ylo = Math.min(...ys) - 0.01, yhi = Math.max(...ys) + 0.01;
+    const { X, Y } = axes(ctx, box, [0, xmax], [ylo, yhi], v => Math.round(v * 100) + " %", v => (v * 100).toFixed(1).replace(".", ",") + " %");
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = tok("--muted"); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(X(s2), Y(mu2)); ctx.lineTo(X(s1), Y(mu1)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = tok("--accent"); ctx.lineWidth = 2.5; ctx.beginPath();
+    for (let i = 0; i <= 200; i++) { const ww = i / 200; const x = X(vol(ww, rho)), y = Y(ret(ww)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke();
+    ctx.font = "12px " + tok("--f-body"); ctx.fillStyle = tok("--fg"); ctx.textBaseline = "bottom";
+    [[s1, mu1, "100 % renta variable"], [s2, mu2, "100 % bonos"]].forEach(([x, y, t]) => {
+      ctx.beginPath(); ctx.arc(X(x), Y(y), 4, 0, 7); ctx.fill();
+      ctx.textAlign = X(x) > box.r - 120 ? "right" : "left"; ctx.fillText(t, X(x) + (ctx.textAlign === "left" ? 8 : -8), Y(y) - 4);
+    });
+    const vs = vol(wStar, rho), ms = ret(wStar);
+    ctx.fillStyle = tok("--warm"); ctx.strokeStyle = tok("--surface"); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(vs), Y(ms), 7, 0, 7); ctx.fill(); ctx.stroke();
+    $("r-w").textContent = pct(wStar, 0); $("r-v").textContent = pct(vs);
+    $("r-m").textContent = pct(ms); $("r-b").textContent = pct(Math.max(0, vol(wStar, 1) - vs));
+  }
+
+  /* ---------- 2. standard error of the mean ---------- */
+  function drawSE() {
+    const T = +$("e-t").value, s = +$("e-s").value / 100, mu = 0.07;
+    $("o-t").textContent = T; $("o-es").textContent = pct(s, 0);
+    const se = s / Math.sqrt(T), lo = mu - 1.96 * se, hi = mu + 1.96 * se;
+    $("r-se").textContent = pct(se); $("r-ci").textContent = pct(lo) + " a " + pct(hi);
+    const yrs = Math.pow(s / 0.01, 2);
+    $("r-yrs").textContent = Math.round(yrs).toLocaleString("es-ES");
+    const { ctx, w, h } = setup($("c-se"));
+    const box = { l: 16, r: w - 16, t: 26, b: h - 30 };
+    const xr = [-0.45, 0.6];
+    const { X } = axes(ctx, { ...box, t: box.b }, xr, [0, 1], v => Math.round(v * 100) + "%", () => "");
+    const mid = (box.t + box.b) / 2;
+    ctx.fillStyle = tok("--band2");
+    const a = X(Math.max(xr[0], lo)), b = X(Math.min(xr[1], hi));
+    ctx.fillRect(a, mid - 14, b - a, 28);
+    ctx.strokeStyle = tok("--muted"); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(0) + 0.5, box.t - 10); ctx.lineTo(X(0) + 0.5, box.b); ctx.stroke();
+    ctx.fillStyle = tok("--accent"); ctx.fillRect(X(mu) - 1.5, mid - 20, 3, 40);
+    ctx.font = "12px " + tok("--f-body"); ctx.fillStyle = tok("--fg"); ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.fillText("media real 7 %", X(mu), mid - 22);
+    ctx.fillStyle = tok("--muted"); ctx.textBaseline = "top"; ctx.fillText("0 %", X(0), box.t - 22 < 0 ? 0 : box.t - 24);
+  }
+
+  /* ---------- 3. Monte Carlo ---------- */
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function drawMC() {
+    const v0 = +$("m-v0").value, c = +$("m-c").value, years = +$("m-y").value;
+    const mu = +$("m-mu").value / 100, sig = +$("m-s").value / 100, infl = +$("m-i").value / 100;
+    $("o-v0").textContent = eur(v0); $("o-c").textContent = eur(c); $("o-y").textContent = years;
+    $("o-mu").textContent = pct(mu, 2); $("o-ms").textContent = pct(sig); $("o-i").textContent = pct(infl, 2);
+    const s2 = Math.log(1 + Math.pow(sig / (1 + mu), 2)), m = Math.log(1 + mu) - s2 / 2;
+    const mm = m / 12, sm = Math.sqrt(s2 / 12), n = years * 12, N = 1500;
+    const rnd = mulberry32(42);
+    const gauss = () => { let u = 0, v = 0; while (u === 0) u = rnd(); v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    const step = Math.max(1, Math.floor(n / 120));
+    const idx = []; for (let t = 0; t <= n; t += step) idx.push(t); if (idx[idx.length - 1] !== n) idx.push(n);
+    const snap = idx.map(() => new Float64Array(N));
+    for (let k = 0; k < N; k++) {
+      let v = v0, j = 0;
+      for (let t = 0; t <= n; t++) {
+        if (t > 0) v = Math.max(0, v * Math.exp(mm + sm * gauss()) + c);
+        if (t === idx[j]) { snap[j][k] = v / Math.pow(1 + infl, t / 12); j++; }
+      }
+    }
+    const q = (arr, p) => { const s = Array.from(arr).sort((a, b) => a - b); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
+    const P = snap.map(a => [0.05, 0.25, 0.5, 0.75, 0.95].map(p => q(a, p)));
+    const contrib = idx.map(t => (v0 + c * t) / Math.pow(1 + infl, t / 12));
+    const { ctx, w, h } = setup($("c-mc"));
+    const box = { l: 64, r: w - 12, t: 10, b: h - 26 };
+    const ymax = Math.max(...P.map(p => p[4]), ...contrib) * 1.05 || 1;
+    const { X, Y } = axes(ctx, box, [0, years], [0, ymax], v => Math.round(v) + "a", v => v >= 1e6 ? (v / 1e6).toLocaleString("es-ES") + " M" : Math.round(v / 1000) + " k");
+    const band = (lo, hi, color) => {
+      ctx.fillStyle = color; ctx.beginPath();
+      idx.forEach((t, i) => { const x = X(t / 12), y = Y(P[i][hi]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      for (let i = idx.length - 1; i >= 0; i--) ctx.lineTo(X(idx[i] / 12), Y(P[i][lo]));
+      ctx.closePath(); ctx.fill();
+    };
+    band(0, 4, tok("--band1")); band(1, 3, tok("--band2"));
+    const line = (vals, color, width, dash) => {
+      ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash || []); ctx.beginPath();
+      idx.forEach((t, i) => { const x = X(t / 12), y = Y(vals[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke(); ctx.setLineDash([]);
+    };
+    line(contrib, tok("--muted"), 1.5, [4, 4]);
+    line(P.map(p => p[2]), tok("--accent"), 2.5);
+    const last = P[P.length - 1];
+    $("r-med").textContent = eur(last[2]); $("r-p5").textContent = eur(last[0]);
+    $("r-p95").textContent = eur(last[4]); $("r-con").textContent = eur(v0 + c * n);
+  }
+
+  const all = () => { drawDiv(); drawSE(); drawMC(); };
+  ["d-mu1", "d-s1", "d-mu2", "d-s2", "d-rho"].forEach(id => $(id).addEventListener("input", drawDiv));
+  ["e-t", "e-s"].forEach(id => $(id).addEventListener("input", drawSE));
+  let pending = null;
+  ["m-v0", "m-c", "m-y", "m-mu", "m-s", "m-i"].forEach(id => $(id).addEventListener("input", () => {
+    if (pending) cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(drawMC);
+  }));
+  window.addEventListener("resize", all);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", all);
+  new MutationObserver(all).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(all);
+  all();
+})();
+</script>
+
+</body>
+</html>
