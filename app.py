@@ -1,13 +1,15 @@
-"""Portfolio Lab: optimise, backtest and plan a portfolio of ETFs, ETCs, index funds and active funds.
+"""Portfolio Optimizer: optimise, backtest and plan a portfolio of ETFs, ETCs, index funds and active funds.
 
 Run with:  streamlit run app.py          (add ?lang=en to the URL for English)
 """
 
 from __future__ import annotations
 
+import base64
 import json
 from dataclasses import replace
 from datetime import date
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -70,7 +72,16 @@ from portfolio_optimizer.planning import historical_dca, projection_table
 from portfolio_optimizer.portfolio_io import TEMPLATE, account_instrument, export_portfolio, parse_portfolio, to_excel_bytes
 from portfolio_optimizer.search import instrument_from_dict, instrument_to_dict, search_instruments
 
-st.set_page_config(page_title="Portfolio Lab", page_icon="📈", layout="wide", initial_sidebar_state="expanded")
+APP_NAME = "Portfolio Optimizer"          # one place to rename the product
+ASSETS = Path(__file__).resolve().parent / "assets"
+LOGO = str(ASSETS / "logo-mark.svg")
+REPO_URL = "https://github.com/rodrisantana/portfolio-optimizer"
+JPM_URL = ("https://am.jpmorgan.com/content/dam/jpm-am-aem/global/en/insights/portfolio-insights/ltcma/noindex/"
+           "ltcma-2027-report.pdf")
+
+st.set_page_config(page_title=APP_NAME, page_icon=str(ASSETS / "logo-mark-64.png"), layout="wide",
+                   initial_sidebar_state="expanded")
+st.logo(LOGO, icon_image=LOGO, size="large")
 
 st.markdown("""
 <style>
@@ -79,17 +90,51 @@ st.markdown("""
 [data-testid="stMetric"] {border: 1px solid rgba(120,140,170,0.22); border-radius: 14px; padding: 14px 16px;
   background: color-mix(in srgb, currentColor 2%, transparent); box-shadow: 0 1px 2px rgba(15,27,45,0.04);}
 [data-testid="stMetricLabel"] p {font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.7;}
-/* tabs as pills */
-.stTabs [role="tablist"] {gap: 8px; flex-wrap: wrap; border-bottom: none; padding-bottom: 6px;}
-.stTabs [data-testid="stTab"] {height: 40px; padding: 0 18px; border-radius: 999px;
-  border: 1px solid rgba(120,140,170,0.32); display: flex; align-items: center;}
-.stTabs [data-testid="stTab"] p {font-weight: 600; font-size: 0.93rem;}
-.stTabs [data-testid="stTab"][aria-selected="true"] {background: #0E8F82; border-color: #0E8F82;}
-.stTabs [data-testid="stTab"][aria-selected="true"] p {color: #fff !important;}
-.stTabs [role="tablist"] > div:not([data-testid="stTab"]) {display: none;}
+/* tabs as a segmented control (no underline) */
+.stTabs [role="tablist"] {gap: 4px; flex-wrap: wrap; border: 1px solid rgba(120,140,170,0.25); border-radius: 14px;
+  padding: 4px; width: fit-content; max-width: 100%; background: color-mix(in srgb, currentColor 3%, transparent);
+  box-shadow: none !important;}
+.stTabs [role="tablist"]::before, .stTabs [role="tablist"]::after,
+.stTabs [data-testid="stTab"]::before, .stTabs [data-testid="stTab"]::after {display: none !important; content: none !important;}
+.stTabs [data-testid="stTab"] {height: 38px; padding: 0 16px; border-radius: 10px; border: none !important;
+  box-shadow: none !important; display: flex; align-items: center;}
+.stTabs [data-testid="stTab"] p {font-weight: 600; font-size: 0.92rem; opacity: 0.75;}
+.stTabs [data-testid="stTab"]:hover p {opacity: 1;}
+.stTabs [data-testid="stTab"][aria-selected="true"] {background: #FFFFFF; box-shadow: 0 1px 3px rgba(15,27,45,0.18) !important;}
+.stTabs [data-testid="stTab"][aria-selected="true"] p {color: #0B1C33 !important; opacity: 1;}
+.stTabs [role="tablist"] > div:not([data-testid="stTab"]) {display: none !important;}
+.stTabs .react-aria-SelectionIndicator {display: none !important;}
+[data-testid="stTabPanel"] {padding-top: 14px;}
+/* sidebar sections */
+.pl-sec {font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.55;
+  margin: 18px 0 2px 0;}
+/* navbar */
+.pl-brand {display: flex; align-items: center; gap: 12px;}
+.pl-brand img {width: 40px; height: 40px;}
+.pl-brand .n {font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1;}
+.pl-brand .s {font-size: 0.8rem; opacity: 0.6; margin-top: 3px;}
+/* market ticker */
+.pl-ticker {display: flex; gap: 26px; overflow-x: auto; white-space: nowrap; padding: 10px 2px 12px 2px;
+  border-bottom: 1px solid rgba(120,140,170,0.2); margin-bottom: 18px; font-size: 0.85rem; scrollbar-width: none;}
+.pl-ticker span.n {opacity: 0.7; margin-right: 6px;}
+.pl-ticker b {font-variant-numeric: tabular-nums; margin-right: 6px; font-weight: 700;}
+/* landing cards */
+.pl-tile {border: 1px solid rgba(120,140,170,0.25); border-radius: 16px; padding: 18px 18px 6px 18px; height: 100%;
+  background: color-mix(in srgb, currentColor 2%, transparent);}
+.pl-tile .ic {width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; font-weight: 800;
+  color: #fff; margin-bottom: 10px;}
+.pl-tile h4 {margin: 0 0 4px 0; font-size: 1.05rem;}
+.pl-tile p {opacity: 0.75; font-size: 0.9rem;}
+/* footer */
+.pl-foot {margin-top: 48px; padding: 26px 0 8px 0; border-top: 1px solid rgba(120,140,170,0.25); font-size: 0.85rem;
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 22px;}
+.pl-foot .h {font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.55; margin: 0 0 8px 0;}
+.pl-foot a {display: block; text-decoration: none; opacity: 0.85; margin-bottom: 4px;}
+.pl-foot .d {opacity: 0.65; line-height: 1.5;}
+@media (max-width: 800px) {.pl-foot {grid-template-columns: 1fr 1fr;}}
 h2, h3 {letter-spacing: -0.01em;}
 /* hero */
-.pl-hero {border-radius: 20px; padding: 26px 30px; margin-bottom: 18px; color: #fff;
+.pl-hero {border-radius: 20px; padding: 24px 28px; margin-bottom: 18px; color: #fff;
   background: radial-gradient(120% 140% at 100% 0%, #13a594 0%, #0e6f78 32%, #0b1c33 75%);
   display: flex; flex-wrap: wrap; gap: 18px 40px; align-items: flex-end; justify-content: space-between;}
 .pl-hero h1 {font-size: 2.1rem; font-weight: 800; margin: 0; color: #fff; letter-spacing: -0.02em; padding: 0;}
@@ -116,13 +161,62 @@ qp_lang = st.query_params.get("lang")
 if "_lang_next" in st.session_state:                   # a loaded session asks for its language
     st.session_state["lang"] = st.session_state.pop("_lang_next")
 st.session_state.setdefault("lang", qp_lang if qp_lang in ("es", "en") else "es")
-lang = st.sidebar.segmented_control("Idioma / Language", ["es", "en"], key="lang", required=True,
-                                    format_func={"es": "Español", "en": "English"}.get)
+_logo_b64 = base64.b64encode(Path(LOGO).read_bytes()).decode()
+nav_l, nav_r = st.columns([5, 1], vertical_alignment="center")
+with nav_r:
+    lang = st.segmented_control("lang", ["es", "en"], key="lang", required=True, label_visibility="collapsed",
+                                format_func={"es": "ES", "en": "EN"}.get, width="stretch")
 if st.query_params.get("lang") != lang:
     st.query_params["lang"] = lang
 i18n.set_language(lang)
 t = i18n.t
 charts.set_translator(t)
+nav_l.markdown(f"<div class='pl-brand'><img src='data:image/svg+xml;base64,{_logo_b64}'/><div><div class='n'>"
+               f"{APP_NAME}</div><div class='s'>{t('Build, compare and plan your investment portfolio')}</div></div>"
+               f"</div>", unsafe_allow_html=True)
+
+# Widgets whose option labels are translated keep one state per language plus a stable "mirror" value,
+# so switching language never feeds a translated label back as a value.
+LANG_WIDGETS = ("source", "preset", "catalog_assets", "freq", "r_method", "c_method", "cma_preset", "rebal",
+                "mc_method", "target_pick", "dlg_mode", "dlg_kind", "wot", "search_pick", "dlg_pick", "dlg_sym")
+
+
+for _name in LANG_WIDGETS:                     # mirror the last value of every language-aware widget
+    for _l in (st.session_state.get("_lang_last"), lang):
+        if _l and f"{_name}__{_l}" in st.session_state:
+            st.session_state[_name] = st.session_state[f"{_name}__{_l}"]
+st.session_state["_lang_last"] = lang
+
+
+def lkey(name: str) -> str:
+    k_ = f"{name}__{lang}"
+    if k_ not in st.session_state and name in st.session_state:
+        st.session_state[k_] = st.session_state[name]
+    return k_
+
+
+def set_state(name: str, value) -> None:
+    """Change a language-aware widget's value from code (before or after it is drawn)."""
+    st.session_state[name] = value
+    for l_ in ("es", "en"):
+        st.session_state.pop(f"{name}__{l_}", None)
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def market_snapshot() -> list[tuple[str, float, float]]:
+    """Last close and daily change of a few reference markets, for the ticker strip."""
+    import yfinance as yf
+    out = []
+    for sym_, name_ in (("^GSPC", "S&P 500"), ("^STOXX50E", "Euro Stoxx 50"), ("^IBEX", "IBEX 35"),
+                        ("EUNL.DE", "MSCI World"), ("^N225", "Nikkei 225"), ("GC=F", "Oro / Gold"),
+                        ("EURUSD=X", "EUR/USD"), ("BTC-EUR", "Bitcoin")):
+        try:
+            h = yf.Ticker(sym_).history(period="7d", auto_adjust=True)["Close"].dropna()
+            if len(h) >= 2:
+                out.append((name_, float(h.iloc[-1]), float(h.iloc[-1] / h.iloc[-2] - 1)))
+        except Exception:
+            continue
+    return out
 
 RETURN_METHODS = {"long_term": "Long-term forecasts (recommended)", "bayes_stein": "Bayes-Stein shrinkage of history",
                   "historical": "Historical mean", "ewma": "Exponentially weighted mean"}
@@ -214,7 +308,7 @@ def get_backtest(prices: pd.DataFrame, kind: str, name: str, weights: pd.Series 
 # =========================================================================== sidebar
 DEFAULTS = {
     "source": "live", "preset": "(custom)",
-    "catalog_assets": PRESETS["Boglehead core (world + EM + bonds + gold)"], "extra": "", "base": "EUR",
+    "catalog_assets": [], "extra": "", "base": "EUR",
     "start": date(2015, 1, 1), "end": date.today(), "backfill": True, "clean": True,
     "freq": "weekly", "r_method": "long_term", "c_method": "ledoit_wolf", "rf": 2.6, "max_w": 0.5, "min_w": 0.0,
     "alpha": 0.0, "cma_preset": DEFAULT_PRESET,
@@ -289,7 +383,7 @@ def load_sample_portfolio() -> None:
     st.session_state["accounts_seed"] = [{"Name": acc.symbol, "TAE %": 2.25, "Type": t("Account")}]
     st.session_state.pop("accounts_ed", None)
     pf[acc.symbol] = {"value": 3000.0, "cost": 3000.0}
-    st.session_state["source"] = "live"
+    set_state("source", "live")
     save_portfolio(pf)
 
 
@@ -303,12 +397,12 @@ def add_position_dialog() -> None:
     modes = ["catalog", "account"] if demo_mode else ["catalog", "search", "account"]
     mode_labels = {"catalog": t("From the list"), "search": t("Search any fund or ETF"),
                    "account": t("Account or deposit")}
-    mode = st.segmented_control(t("What do you want to add?"), modes, default="catalog", key="dlg_mode",
+    mode = st.segmented_control(t("What do you want to add?"), modes, default="catalog", key=lkey("dlg_mode"),
                                 format_func=mode_labels.get) or "catalog"
     inst = None
     if mode == "catalog":
         pool = [i for i in CATALOG if not demo_mode or i.symbol in load_demo().prices.columns]
-        sym = st.selectbox(t("Product"), [i.symbol for i in pool], index=None, key="dlg_sym",
+        sym = st.selectbox(t("Product"), [i.symbol for i in pool], index=None, key=lkey("dlg_sym"),
                            placeholder=t("Type to filter: MSCI World, Vanguard, gold, bonds..."),
                            format_func=lambda s_: f"{find(s_).display} · {t(find(s_).kind)} · {find(s_).name}")
         inst = find(sym) if sym else None
@@ -324,13 +418,13 @@ def add_position_dialog() -> None:
                 st.info(t("Nothing with price history found. Try another name or add it as your own fund."))
         hits = st.session_state.get("dlg_hits", [])
         if hits:
-            k = st.selectbox(t("Results"), range(len(hits)), key="dlg_pick",
+            k = st.selectbox(t("Results"), range(len(hits)), key=lkey("dlg_pick"),
                              format_func=lambda i: f"{hits[i]['name']} · {t(hits[i]['kind'])}")
             inst = instrument_from_dict(hits[k])
     else:
         name = st.text_input(t("Name"), value=t("Remunerated account"), key="dlg_acc_name")
         tae = st.number_input("TAE %", 0.0, 15.0, 2.0, 0.05, key="dlg_tae")
-        kind = st.segmented_control(t("Type"), ["Account", "Deposit"], default="Account", key="dlg_kind",
+        kind = st.segmented_control(t("Type"), ["Account", "Deposit"], default="Account", key=lkey("dlg_kind"),
                                     format_func=t) or "Account"
         inst = account_instrument(name.strip() or t("Remunerated account"), tae / 100, kind) if name.strip() else None
     if inst is not None and mode != "account":
@@ -389,8 +483,9 @@ def apply_import(df: pd.DataFrame) -> None:
             else:
                 added[inst.symbol] = instrument_to_dict(inst)
         seed[inst.symbol] = {"value": float(r.value), "cost": float(r.cost)}
-    st.session_state.update({"source": "live", "preset": "(custom)", "_preset": "(custom)", "extra": "",
-                             "catalog_assets": [], "added": added, "accounts_seed": accounts})
+    for name_, val_ in (("source", "live"), ("preset", "(custom)"), ("catalog_assets", [])):
+        set_state(name_, val_)
+    st.session_state.update({"_preset": "(custom)", "extra": "", "added": added, "accounts_seed": accounts})
     save_portfolio(seed)
     for stale in ("inst", "mu_edit", "accounts_ed"):
         st.session_state.pop(stale, None)
@@ -404,7 +499,9 @@ def sidebar():
     for k_, v_ in DEFAULTS.items():
         st.session_state.setdefault(k_, v_)
     sb = st.sidebar
-    sb.markdown("## 📈 Portfolio Lab")
+
+    # ---------------- 1. My portfolio
+    sb.markdown(f"<div class='pl-sec'>{t('My portfolio')}</div>", unsafe_allow_html=True)
     pf_now = current_portfolio()
     if sb.button(t("Add to my portfolio"), type="primary", width="stretch", key="sb_add", icon=":material/add:"):
         add_position_dialog()
@@ -413,7 +510,6 @@ def sidebar():
         sb.caption(t("My portfolio: {n} positions · {v}").format(n=len(pf_now), v=money(total_, "EUR")))
     else:
         sb.caption(t("Build your portfolio product by product, import it from a file or try the example."))
-
     files_box = sb.expander(t("Import a portfolio or load a session"), icon=":material/upload_file:")
     session = files_box.file_uploader(t("Load a saved session (.json)"), type=["json"], key="session_file",
                                help=t("Restores your universe, holdings and settings."))
@@ -425,7 +521,10 @@ def sidebar():
                 continue
             if k == "source" and v not in ("live", "demo"):
                 v = "demo" if "demo" in str(v).lower() else "live"
-            st.session_state[k] = v
+            if k in LANG_WIDGETS:
+                set_state(k, v)
+            else:
+                st.session_state[k] = v
         st.session_state["custom_seed"] = cfg.get("custom_funds", [])
         st.session_state["added"] = cfg.get("added", {})
         st.session_state["accounts_seed"] = cfg.get("accounts", [])
@@ -454,19 +553,30 @@ def sidebar():
             st.session_state["_import_msg"] = t("Could not import the file: {err}").format(err=exc)
         st.rerun()
 
-    source = sb.radio(t("Data source"), ["live", "demo"], key="source",
-                      format_func={"live": t("Yahoo Finance (live)"), "demo": t("Offline demo dataset")}.get,
-                      help=t("The demo dataset ships with the repo (8 UCITS products in EUR, 2018-2026) and works "
-                             "without internet."))
-    demo = source == "demo"
+
+    # ---------------- 2. Compare with
+    sb.markdown(f"<div class='pl-sec'>{t('Compare with')}</div>", unsafe_allow_html=True)
+    demo = st.session_state.get("source") == "demo"
     customs: list[Instrument] = []
     if demo:
         demo_cols = list(load_demo().prices.columns)
-        st.session_state.setdefault("demo_assets", [c for c in demo_cols if c != "XEON.DE"])
-        chosen = sb.multiselect(t("Assets"), demo_cols, key="demo_assets")
+        st.session_state.setdefault("demo_assets", [])
+        chosen = sb.multiselect(t("Products to compare"), demo_cols, key="demo_assets",
+                                placeholder=t("None selected"))
         extra, upload, base = [], None, "EUR"
     else:
-        with sb.expander(t("Search funds, ETFs and shares")):
+        preset = sb.selectbox(t("Ready-made selection"), ["(custom)"] + list(PRESETS), key=lkey("preset"),
+                              format_func=lambda p_: t("None") if p_ == "(custom)" else t(p_),
+                              help=t("Loads a typical set of products to compare. Your own positions are always "
+                                     "included."))
+        options = [i.symbol for i in CATALOG]
+        labels = {i.symbol: f"{i.display} · {t(i.kind)}" for i in CATALOG}
+        if preset in PRESETS and st.session_state.get("_preset") != preset:
+            set_state("catalog_assets", list(PRESETS[preset]))
+        st.session_state["_preset"] = preset
+        chosen = sb.multiselect(t("Products to compare"), options, format_func=lambda s: labels.get(s, s),
+                                key=lkey("catalog_assets"), placeholder=t("Choose ETFs, funds..."))
+        with sb.expander(t("Search funds, ETFs and shares"), icon=":material/search:"):
             st.caption(t("Searches Yahoo Finance by name, ISIN or ticker and keeps only products with price history. "
                          "The classification is guessed and can be edited in the instrument table."))
             q = st.text_input(t("Name, ISIN or ticker"), key="search_q",
@@ -489,12 +599,12 @@ def sidebar():
                     kind = t(h["instrument"]["kind"])
                     since = f" · {t('since')} {h['start'][:4]}" if h["start"] else ""
                     return f"{h['name']} · {kind} · {h['exchange']}{since}"
-                choice = st.selectbox(t("Results"), range(len(hits)), format_func=_hit_label, key="search_pick")
+                choice = st.selectbox(t("Results"), range(len(hits)), format_func=_hit_label, key=lkey("search_pick"))
                 if st.button(t("Add to the universe"), key="search_add"):
                     inst = instrument_from_dict(hits[choice]["instrument"])
                     if inst.symbol in CATALOG_SYMBOLS:
-                        st.session_state["catalog_assets"] = list(dict.fromkeys(
-                            st.session_state.get("catalog_assets", []) + [inst.symbol]))
+                        set_state("catalog_assets", list(dict.fromkeys(
+                            st.session_state.get("catalog_assets", []) + [inst.symbol])))
                     else:
                         st.session_state.setdefault("added", {})[inst.symbol] = instrument_to_dict(inst)
                     st.success(t("Added: {n}").format(n=inst.name))
@@ -505,21 +615,9 @@ def sidebar():
                 if set(keep) != set(added):
                     st.session_state["added"] = {k_: v_ for k_, v_ in added.items() if k_ in keep}
                     st.rerun()
-        sb.markdown(f"**{t('Products to compare')}**")
-        sb.caption(t("Your positions are always included. Add other products here to compare them or use them in "
-                     "the optimiser."))
-        preset = sb.selectbox(t("Start from a preset"), ["(custom)"] + list(PRESETS), key="preset", format_func=t)
-        options = [i.symbol for i in CATALOG]
-        labels = {i.symbol: f"{i.display} · {t(i.kind)} · {i.name}" for i in CATALOG}
-        if preset != "(custom)" and st.session_state.get("_preset") != preset:
-            st.session_state["catalog_assets"] = PRESETS[preset]
-        st.session_state["_preset"] = preset
-        chosen = sb.multiselect(t("ETFs, ETCs, index funds and active funds"), options,
-                                format_func=lambda s: labels.get(s, s), key="catalog_assets")
-        extra_txt = sb.text_input(t("Other Yahoo tickers or ISINs (comma separated)"), key="extra",
-                                  placeholder="AAPL, IE00B3RBWM25, MEUD.PA")
-        extra = [x.strip() for x in extra_txt.split(",") if x.strip()]
-        with sb.expander(t("Add a fund that is not on the list")):
+
+    if not demo:
+        with sb.expander(t("Add a fund that is not on the list"), icon=":material/add_box:"):
             st.caption(t("For funds Yahoo does not cover well (for example some Amundi or Carmignac funds). "
                          "Give the ISIN if you have it and an ETF that follows the same index as proxy: real prices "
                          "are used when they exist, otherwise the fund is simulated as the proxy minus the fee "
@@ -539,15 +637,9 @@ def sidebar():
                 })
             customs = custom_instruments(custom_df)
             st.session_state["custom_rows"] = custom_df.to_dict("records")
-        up = sb.file_uploader(t("Your own NAV history (CSV)"), type=["csv"], key="nav_csv",
-                              help=t("First column = date, then one column per fund, prices in the base currency. "
-                                     "Semicolons and decimal commas are fine."))
-        upload = up.getvalue() if up is not None else None
-        base = sb.selectbox(t("Base currency"), ["EUR", "USD", "GBP", "CHF"], key="base",
-                            help=t("Every price is converted to this currency with daily FX rates, so returns include "
-                                   "the currency risk you actually bear."))
 
-    with sb.expander(t("Remunerated accounts and deposits")):
+    # ---------------- 3. Cash
+    with sb.expander(t("Remunerated accounts and deposits"), icon=":material/savings:"):
         st.caption(t("Add cash at a known interest rate. Forecasts use the TAE; the history follows the ECB rate "
                      "(via the €STR) with today's spread, never below zero."))
         seed_acc = pd.DataFrame(st.session_state.get("accounts_seed") or [], columns=ACCOUNT_COLUMNS)
@@ -565,17 +657,37 @@ def sidebar():
                                                    i18n.untranslate(str(r.get("Type") or t("Account")))))
         st.session_state["account_rows"] = acc_df.to_dict("records")
 
-    with sb.expander(t("Period and data quality")):
+
+    # ---------------- 4. Advanced settings
+    sb.markdown(f"<div class='pl-sec'>{t('Settings')}</div>", unsafe_allow_html=True)
+    with sb.expander(t("Data"), icon=":material/database:"):
+        source = st.radio(t("Data source"), ["live", "demo"], key=lkey("source"),
+                          format_func={"live": t("Yahoo Finance (live)"), "demo": t("Offline demo dataset")}.get,
+                          help=t("The demo dataset ships with the repo (8 UCITS products in EUR, 2018-2026) and works "
+                                 "without internet."))
+        demo = source == "demo"
+        if not demo:
+            base = st.selectbox(t("Base currency"), ["EUR", "USD", "GBP", "CHF"], key="base",
+                                help=t("Every price is converted to this currency with daily FX rates, so returns "
+                                       "include the currency risk you actually bear."))
+            extra_txt = st.text_input(t("Other Yahoo tickers or ISINs (comma separated)"), key="extra",
+                                      placeholder="AAPL, IE00B3RBWM25, MEUD.PA")
+            extra = [x.strip() for x in extra_txt.split(",") if x.strip()]
+            up = st.file_uploader(t("Your own NAV history (CSV)"), type=["csv"], key="nav_csv",
+                                  help=t("First column = date, then one column per fund, prices in the base currency. "
+                                         "Semicolons and decimal commas are fine."))
+            upload = up.getvalue() if up is not None else None
+    with sb.expander(t("Period and data quality"), icon=":material/date_range:"):
         start = st.date_input(t("Start"), key="start")
         end = st.date_input(t("End"), key="end")
         backfill = st.checkbox(t("Backfill short fund histories with an ETF on the same index"), key="backfill",
                                disabled=demo)
         clean = st.checkbox(t("Remove one-day bad prints"), key="clean", disabled=demo)
 
-    with sb.expander(t("Estimation")):
-        freq = st.selectbox(t("Return frequency"), list(PERIODS_PER_YEAR), key="freq", format_func=t,
+    with sb.expander(t("Estimation"), icon=":material/functions:"):
+        freq = st.selectbox(t("Return frequency"), list(PERIODS_PER_YEAR), key=lkey("freq"), format_func=t,
                             help=t("Weekly avoids the bias from exchanges closing at different times."))
-        r_method = st.selectbox(t("Expected returns"), list(RETURN_METHODS), key="r_method",
+        r_method = st.selectbox(t("Expected returns"), list(RETURN_METHODS), key=lkey("r_method"),
                                 format_func=lambda m: t(RETURN_METHODS[m]),
                                 help=t("Long-term forecasts use forward-looking assumptions per asset class instead "
                                        "of extrapolating the past. Edit them in the Optimiser tab."))
@@ -583,12 +695,12 @@ def sidebar():
                                 help=t("Extra return you expect from active managers before fees. The evidence "
                                        "(SPIVA) suggests about zero: most active funds trail their index by their "
                                        "fee difference.")) / 100
-        c_method = st.selectbox(t("Covariance"), list(COV_METHODS), key="c_method",
+        c_method = st.selectbox(t("Covariance"), list(COV_METHODS), key=lkey("c_method"),
                                 format_func=lambda m: t(COV_METHODS[m]))
         rf = st.number_input(t("Risk-free rate (annual %)"), step=0.25, key="rf",
                              help=t("Expected return of euro cash: 2.6% a year in J.P. Morgan's 2027 assumptions.")) / 100
 
-    with sb.expander(t("Constraints")):
+    with sb.expander(t("Constraints"), icon=":material/tune:"):
         max_w = st.slider(t("Max weight per asset"), 0.05, 1.0, step=0.05, key="max_w",
                           help=t("Caps stop the optimiser from betting everything on one asset."))
         min_w = st.slider(t("Min weight per asset"), 0.0, 0.2, step=0.01, key="min_w")
@@ -610,21 +722,98 @@ def sidebar():
                 if not demo else [])
 
 
+
+
 # =========================================================================== load data
 cfg = sidebar()
+
+
+def render_ticker() -> None:
+    """Strip of reference markets with their daily change, like the header of a financial portal."""
+    if cfg["demo"]:
+        return
+    snap = market_snapshot()
+    if not snap:
+        return
+    items = []
+    for name_, last_, chg_ in snap:
+        cls = "pos" if chg_ >= 0 else "neg"
+        arrow = "▲" if chg_ >= 0 else "▼"
+        val = f"{last_:,.2f}" if last_ < 100 else f"{last_:,.0f}"
+        if lang == "es":
+            val = val.replace(",", "X").replace(".", ",").replace("X", ".")
+        items.append(f"<div><span class='n'>{name_}</span><b>{val}</b><span class='{cls}'>{arrow} {pct(chg_, 2)}</span>"
+                     f"</div>")
+    st.markdown(f"<div class='pl-ticker'>{''.join(items)}</div>", unsafe_allow_html=True)
+
+
+def render_footer() -> None:
+    year = date.today().year
+    st.markdown(f"""
+<div class='pl-foot'>
+  <div><div class='pl-brand'><img src='data:image/svg+xml;base64,{_logo_b64}' style='width:30px;height:30px'/>
+    <div class='n' style='font-size:1.05rem'>{APP_NAME}</div></div>
+    <p class='d'>{t('Educational tool to build and analyse investment portfolios. It is not financial, investment '
+                     'or tax advice: past returns and forecasts do not guarantee future results.')}</p></div>
+  <div><div class='h'>{t('Data and sources')}</div>
+    <a href='https://finance.yahoo.com' target='_blank'>Yahoo Finance</a>
+    <a href='{JPM_URL}' target='_blank'>J.P. Morgan LTCMA 2027</a>
+    <a href='https://www.justetf.com/es/' target='_blank'>justETF</a></div>
+  <div><div class='h'>{t('Project')}</div>
+    <a href='{REPO_URL}' target='_blank'>{t('Source code')}</a>
+    <a href='{REPO_URL}#methods' target='_blank'>{t('Methodology')}</a>
+    <a href='{REPO_URL}/blob/main/docs/guide.html' target='_blank'>{t('Technical guide')}</a></div>
+  <div><div class='h'>{t('About')}</div>
+    <a href='https://github.com/rodrisantana' target='_blank'>Rodrigo Santana</a>
+    <span class='d'>© {year} · {t('Prices may be delayed. Use at your own risk.')}</span></div>
+</div>""", unsafe_allow_html=True)
+
+
+render_ticker()
 hero_slot = st.container()
 
 
 def render_hero(kpis: list[tuple[str, str, str]] | None = None) -> None:
-    chips = ["Yahoo Finance", "J.P. Morgan LTCMA 2027", "EUR", t("Educational tool, not advice")]
     k_html = "".join(f"<div class='kpi'><div class='l'>{l_}</div><div class='v {c_}'>{v_}</div></div>"
                      for l_, v_, c_ in (kpis or []))
     with hero_slot:
-        st.markdown(
-            f"<div class='pl-hero'><div><h1>Portfolio Lab</h1><div class='tag'>"
-            f"{t('Build, compare and plan your investment portfolio: ETFs, index and active funds, bonds and cash.')}"
-            f"</div>{''.join(f'<span class=chip>{c}</span>' for c in chips)}</div>"
-            f"<div class='kpis'>{k_html}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='pl-hero'><div><div class='tag' style='opacity:.75;text-transform:uppercase;"
+                    f"letter-spacing:.1em;font-size:.72rem'>{t('My portfolio')}</div>"
+                    f"<h1>{t('Overview')}</h1></div><div class='kpis'>{k_html}</div></div>", unsafe_allow_html=True)
+
+
+def render_landing() -> None:
+    lead = t("Build your portfolio with any ETF, index or active fund, bond fund or savings account, see what you can "
+             "expect at every horizon and compare it with the strategies professionals use.")
+    st.markdown(f"<h1 style='font-size:2.4rem;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px 0'>"
+                f"{t('Your investments, clearly.')}</h1><p style='font-size:1.1rem;opacity:.75;max-width:62ch'>"
+                f"{lead}</p>", unsafe_allow_html=True)
+    tiles = [("#0E8F82", "1", t("Build your portfolio"),
+              t("Add what you own, product by product, with its current value.")),
+             ("#2a78d6", "2", t("Import a file"),
+              t("Upload a CSV or Excel export from your bank or broker; columns are detected automatically.")),
+             ("#6250d6", "3", t("Explore an example"),
+              t("See every feature working with a realistic diversified portfolio."))]
+    cols = st.columns(3)
+    for col, (color, num, title, body) in zip(cols, tiles):
+        col.markdown(f"<div class='pl-tile'><div class='ic' style='background:{color}'>{num}</div><h4>{title}</h4>"
+                     f"<p>{body}</p></div>", unsafe_allow_html=True)
+    if cols[0].button(t("Add to my portfolio"), type="primary", width="stretch", key="land_add"):
+        add_position_dialog()
+    up_ = cols[1].file_uploader(t("Import a portfolio (CSV or Excel)"), type=["csv", "xlsx", "xls"], key="land_import",
+                                label_visibility="collapsed")
+    if up_ is not None and st.session_state.get("_imported") != up_.file_id:
+        st.session_state["_imported"] = up_.file_id
+        try:
+            with st.spinner(t("Reading the portfolio and finding each product...")):
+                apply_import(parse_portfolio(up_.getvalue(), up_.name))
+        except Exception as exc:
+            st.session_state["_import_msg"] = t("Could not import the file: {err}").format(err=exc)
+        st.rerun()
+    cols[2].button(t("Load an example portfolio"), on_click=load_sample_portfolio, width="stretch",
+                   key="land_sample")
+    st.caption(t("Tip: in the sidebar you can also pick products just to compare them, without adding them to your "
+                 "portfolio."))
 
 
 if st.session_state.get("_import_msg"):
@@ -637,15 +826,10 @@ portfolio_syms = [s_ for s_ in current_portfolio()
                   if not cfg["demo"] or s_ in load_demo().prices.columns or describe(s_).rate is not None]
 ids = list(dict.fromkeys(cfg["chosen"] + cfg["extra"] + [i.symbol for i in user_instruments] + portfolio_syms))
 if len(ids) < 2 and not cfg["upload"]:
-    render_hero()
-    _msg = t("Add the funds, ETFs or accounts you own (or want to own), import them from a CSV or Excel file, or "
-             "load an example. You need at least two products.")
-    st.markdown(f"<div class='pl-empty'><h3>{t('Start by building your portfolio')}</h3><p>{_msg}</p></div>",
-                unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    if c1.button(t("Add to my portfolio"), type="primary", width="stretch", key="empty_add"):
-        add_position_dialog()
-    c2.button(t("Load an example portfolio"), on_click=load_sample_portfolio, width="stretch", key="empty_sample")
+    if ids:
+        st.info(t("Add at least one more product to start the analysis."))
+    render_landing()
+    render_footer()
     st.stop()
 
 try:
@@ -662,9 +846,9 @@ try:
         else:
             data = get_prices(tuple(ids), cfg["base"], cfg["backfill"], cfg["clean"], cfg["upload"], custom_spec)
 except Exception as exc:
-    render_hero()
     st.error(t("Could not load prices: {err}").format(err=exc))
     st.caption(t("Tip: switch to the offline demo dataset, or check the ticker on finance.yahoo.com."))
+    render_footer()
     st.stop()
 
 for w in data.warnings:
@@ -705,8 +889,9 @@ def data_status(asset: str) -> str:
 
 
 # ---------------------------------------------------------------- instrument table (classification and TER editable)
-tabs = st.tabs([t("Start here"), t("Overview"), t("Optimiser"), t("My portfolio"), t("Savings plan"), t("Backtest"),
-               t("Methodology")])
+_t_mine, _t_plan, _t_opt, _t_prod, _t_bt, _t_guide = st.tabs(
+    [t("My portfolio"), t("Savings plan"), t("Optimiser"), t("Products"), t("Backtest"), t("Guide and methodology")])
+tabs = [_t_guide, _t_prod, _t_opt, _t_mine, _t_plan, _t_bt, _t_guide]
 with tabs[0]:
     st.markdown(i18n.GUIDE[lang])
     st.subheader(t("The strategies, explained"))
@@ -783,7 +968,7 @@ with tabs[2]:
                          "return is what a buy-and-hold investor typically earns per year. Each asset gets the figure "
                          "of its class and region minus its TER (plus alpha for active funds). Volatilities and "
                          "correlations come from the data."))
-            cma_preset = st.selectbox(t("Set of assumptions"), list(CMA_PRESETS), key="cma_preset", format_func=t)
+            cma_preset = st.selectbox(t("Set of assumptions"), list(CMA_PRESETS), key=lkey("cma_preset"), format_func=t)
             base_tab = preset_table(cma_preset)
             show_tab = base_tab.assign(Assumption=[t(k) for k in base_tab["Assumption"]])
             cma_df = st.data_editor(
@@ -880,15 +1065,13 @@ if has_holdings:
     _tot = sum(h.value for h in holdings)
     _cost = sum(h.cost_basis for h in holdings)
     _g = (_tot / _cost - 1) if _cost else None
-    render_hero([(t("My portfolio"), money(_tot, ccy), ""),
+    render_hero([(t("Value"), money(_tot, ccy), ""),
                  (t("Unrealised gain"), pct(_g) if _g is not None else "n/a",
                   "" if _g is None else ("pos" if _g >= 0 else "neg")),
                  (t("Expected return"), pct(_me.expected_return), ""),
                  (t("Volatility"), pct(_me.volatility), "")])
 else:
-    render_hero([(t("Products"), str(len(assets)), ""),
-                 (t("Data since"), f"{prices.index[0]:%m/%Y}", ""),
-                 (t("My portfolio"), t("empty"), "")])
+    pass                                        # no hero card until the user has a portfolio
 
 
 def render_breakdown(selection: dict[str, pd.Series], key: str) -> None:
@@ -1006,7 +1189,7 @@ with tabs[2]:
             st.markdown(f"**{t(name_)}**. " + i18n.STRATEGY_HELP[lang][name_].split("\n\n")[0])
     pick = st.multiselect(t("Portfolios"), list(shown), format_func=t,
                           default=[n for n in ("Maximum Sharpe", "Risk parity", "My portfolio") if n in shown],
-                          key=f"w_pick_{len(shown)}")
+                          key=f"w_pick_{len(shown)}_{lang}")
     if pick:
         wdf = pd.DataFrame({n: shown[n].weights for n in pick})
         st.plotly_chart(charts.weights_bars(wdf, charts.color_map(list(shown))), width="stretch")
@@ -1014,7 +1197,7 @@ with tabs[2]:
         st.download_button(t("Download weights (CSV)"), tr_columns(wdf).to_csv().encode(), "weights.csv", "text/csv")
 
     st.subheader(t("Where does the risk come from?"))
-    focus = st.selectbox(t("Portfolio"), list(shown), format_func=t, key=f"rc_pick_{len(shown)}")
+    focus = st.selectbox(t("Portfolio"), list(shown), format_func=t, key=f"rc_pick_{len(shown)}_{lang}")
     rc = risk_contributions(shown[focus].weights, cov)
     st.plotly_chart(charts.risk_vs_weight(shown[focus].weights, rc), width="stretch")
     st.caption(t("Risk contribution = share of portfolio variance coming from each asset. In a typical 60/40 "
@@ -1091,7 +1274,7 @@ with tabs[3]:
         st.subheader(t("Rebalancing plan"))
         c1, c2, c3 = st.columns(3)
         target_name = c1.selectbox(t("Target portfolio"), [n for n in shown if n != "My portfolio"], format_func=t,
-                                   key="target_pick")
+                                   key=lkey("target_pick"))
         new_cash = c2.number_input(t("New money to invest ({c})").format(c=ccy), value=1000.0, step=100.0,
                                    key="new_cash")
         sells = c3.toggle(t("Allow selling (full rebalance)"), value=False, key="sells",
@@ -1155,7 +1338,7 @@ with tabs[4]:
     options = list(shown)
     default_idx = options.index("My portfolio") if "My portfolio" in options else 0
     c = st.columns(4)
-    mc_name = c[0].selectbox(t("Portfolio"), options, index=default_idx, format_func=t, key=f"mc_pick_{len(options)}")
+    mc_name = c[0].selectbox(t("Portfolio"), options, index=default_idx, format_func=t, key=f"mc_pick_{len(options)}_{lang}")
     p = shown[mc_name]
     start_val = float(sum(h.value for h in holdings)) if has_holdings else 10_000.0
     initial = c[1].number_input(t("Initial capital ({c})").format(c=ccy), 0.0, 1e9, start_val, 1000.0,
@@ -1178,7 +1361,7 @@ with tabs[4]:
     growth = c[0].number_input(t("Contribution growth (annual %)"), 0.0, 20.0, 0.0, 0.5, key="mc_growth") / 100
     goal = c[1].number_input(t("Goal in today's money ({c}, 0 = none)").format(c=ccy), 0.0, 1e10, 0.0, 10_000.0,
                              key="mc_goal")
-    method = c[2].selectbox(t("Return model"), METHODS, key="mc_method",
+    method = c[2].selectbox(t("Return model"), METHODS, key=lkey("mc_method"),
                             format_func=lambda m: t({"lognormal": "Log-normal", "student_t": "Student-t (fat tails)",
                                                      "bootstrap": "Historical block bootstrap"}[m]))
     n_sims = c[3].select_slider(t("Simulations"), [1000, 2000, 5000, 10000, 20000], value=5000, key="mc_n")
@@ -1270,12 +1453,12 @@ with tabs[5]:
                  "trading costs are deducted on every rebalance."))
     c = st.columns(4)
     lookback = c[0].slider(t("Lookback (years)"), 1.0, 5.0, 3.0, 0.5, key="lookback")
-    rebalance = c[1].selectbox(t("Rebalance"), [r for r in REBALANCE_RULES if r != "Never"], index=1, key="rebal",
+    rebalance = c[1].selectbox(t("Rebalance"), [r for r in REBALANCE_RULES if r != "Never"], index=1, key=lkey("rebal"),
                                format_func=t)
     cost_bps = c[2].number_input(t("Trading cost (bps)"), 0.0, 100.0, 10.0, 1.0, key="cost_bps")
     bench = c[3].selectbox(t("Benchmark"), assets, index=0, key="bench")
     pool = list(STRATEGIES) + (["My portfolio"] if has_holdings else [])
-    chosen_bt = st.multiselect(t("Strategies"), pool, format_func=t, key=f"bt_pick_{has_holdings}",
+    chosen_bt = st.multiselect(t("Strategies"), pool, format_func=t, key=f"bt_pick_{has_holdings}_{lang}",
                                default=["Maximum Sharpe", "Risk parity", "Equal weight"] +
                                (["My portfolio"] if has_holdings else []))
     if cfg["r_method"] == "long_term":
@@ -1340,10 +1523,13 @@ with tabs[5]:
                      "the return you would actually have earned."))
         dyn = [n for n in chosen_bt if n not in ("My portfolio", "Equal weight")]
         if dyn:
-            which = st.selectbox(t("Weights over time"), dyn, format_func=t, key="wot")
+            which = st.selectbox(t("Weights over time"), dyn, format_func=t, key=lkey("wot"))
             st.caption(t("How the strategy changed its allocation at each rebalance."))
             st.plotly_chart(charts.weights_over_time(results[which].weights, asset_colors), width="stretch")
 
 # =========================================================================== Methodology tab
 with tabs[6]:
+    st.divider()
     st.markdown(i18n.METHODOLOGY[lang])
+
+render_footer()

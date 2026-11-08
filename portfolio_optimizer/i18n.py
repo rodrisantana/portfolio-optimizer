@@ -459,6 +459,39 @@ ES: dict[str, str] = {
     "Your positions are always included. Add other products here to compare them or use them in the optimiser.":
         "Tus posiciones siempre se incluyen. Añade aquí otros productos para compararlos o usarlos en el optimizador.",
     "empty": "vacía", "Import a portfolio or load a session": "Importar cartera o cargar sesión",
+    # ---- landing, navigation and footer
+    "About": "Autor", "Add at least one more product to start the analysis.":
+        "Añade al menos un producto más para empezar el análisis.",
+    "Add what you own, product by product, with its current value.":
+        "Añade lo que tienes, producto a producto, con su valor actual.",
+    "Build your portfolio": "Crea tu cartera",
+    "Build your portfolio with any ETF, index or active fund, bond fund or savings account, see what you can expect "
+    "at every horizon and compare it with the strategies professionals use.":
+        "Crea tu cartera con cualquier ETF, fondo indexado o activo, fondo de renta fija o cuenta remunerada, mira qué "
+        "puedes esperar a cada plazo y compárala con las estrategias que usan los profesionales.",
+    "Build, compare and plan your investment portfolio": "Construye, compara y planifica tu cartera de inversión",
+    "Choose ETFs, funds...": "Elige ETFs, fondos...", "Compare with": "Comparar con",
+    "Data and sources": "Datos y fuentes",
+    "Educational tool to build and analyse investment portfolios. It is not financial, investment or tax advice: "
+    "past returns and forecasts do not guarantee future results.":
+        "Herramienta educativa para construir y analizar carteras de inversión. No es asesoramiento financiero, de "
+        "inversión ni fiscal: las rentabilidades pasadas y las previsiones no garantizan resultados futuros.",
+    "Explore an example": "Explora un ejemplo", "Guide and methodology": "Guía y metodología",
+    "Import a file": "Importa un archivo",
+    "Loads a typical set of products to compare. Your own positions are always included.":
+        "Carga un conjunto típico de productos para comparar. Tus posiciones siempre se incluyen.",
+    "None": "Ninguna", "None selected": "Ninguno seleccionado",
+    "Prices may be delayed. Use at your own risk.": "Los precios pueden ir con retraso. Úsalo bajo tu responsabilidad.",
+    "Project": "Proyecto", "Ready-made selection": "Selección predefinida",
+    "See every feature working with a realistic diversified portfolio.":
+        "Mira todas las funciones con una cartera diversificada realista.",
+    "Settings": "Ajustes", "Source code": "Código fuente", "Technical guide": "Guía técnica",
+    "Tip: in the sidebar you can also pick products just to compare them, without adding them to your portfolio.":
+        "Consejo: en la barra lateral también puedes elegir productos solo para compararlos, sin añadirlos a tu "
+        "cartera.",
+    "Upload a CSV or Excel export from your bank or broker; columns are detected automatically.":
+        "Sube un CSV o Excel exportado de tu banco o bróker; las columnas se detectan solas.",
+    "Your investments, clearly.": "Tus inversiones, con claridad.",
     # ---- charts
     "Random portfolios": "Carteras aleatorias", "Efficient frontier": "Frontera eficiente",
     "Capital market line": "Línea del mercado de capitales", "Return": "Rentabilidad",
@@ -546,9 +579,9 @@ compromisos entre riesgo y rentabilidad. No es asesoramiento financiero.
 
 GUIDE = {
     "es": """
-### Cómo usar Portfolio Lab
+### Cómo usar Portfolio Optimizer
 
-Portfolio Lab sirve para construir y revisar una cartera de inversión a largo plazo, sea cual sea tu banco o bróker.
+Portfolio Optimizer sirve para construir y revisar una cartera de inversión a largo plazo, sea cual sea tu banco o bróker.
 No te dice qué comprar: te ayuda a ver qué riesgo asumes, cómo se reparte tu dinero y qué puedes esperar a cada plazo.
 
 1. **Crea tu cartera** con el botón **Añadir a mi cartera** de la barra lateral: eliges un producto de la lista,
@@ -585,9 +618,9 @@ histórico de precios.
 *Esta herramienta es educativa y no constituye asesoramiento financiero ni fiscal.*
 """,
     "en": """
-### How to use Portfolio Lab
+### How to use Portfolio Optimizer
 
-Portfolio Lab helps you build and review a long-term investment portfolio, whatever your bank or broker. It does not
+Portfolio Optimizer helps you build and review a long-term investment portfolio, whatever your bank or broker. It does not
 tell you what to buy: it shows the risk you take, how your money is spread and what you can expect at each horizon.
 
 1. **Build your portfolio** with the **Add to my portfolio** button in the sidebar: pick a product from the list,

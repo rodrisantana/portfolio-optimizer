@@ -1,4 +1,6 @@
-# Portfolio Lab: optimisation, backtesting and Monte Carlo for ETFs, ETCs and index funds
+<img src="assets/logo-mark.svg" width="56" alt="logo">
+
+# Portfolio Optimizer: optimisation, backtesting and Monte Carlo for ETFs, ETCs and index funds
 
 [![CI](https://github.com/rodrisantana/portfolio-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrisantana/portfolio-optimizer/actions/workflows/ci.yml)
 
@@ -34,7 +36,7 @@ whole workflow:
 * **Your own portfolio.** Compare it with the efficient frontier and get a rebalancing plan that uses new cash first,
   with an estimate of the Spanish tax (IRPF) on any sale and tax-free *traspasos* between funds.
 
-![Efficient frontier](docs/img/frontier.png)
+![Portfolio Optimizer](docs/img/my_portfolio.png)
 
 ## Quick start
 
