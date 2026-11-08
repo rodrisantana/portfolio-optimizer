@@ -579,9 +579,9 @@ compromisos entre riesgo y rentabilidad. No es asesoramiento financiero.
 
 GUIDE = {
     "es": """
-### Cómo usar Portfolio Lab
+### Cómo usar Portfolio Optimizer
 
-Portfolio Lab sirve para construir y revisar una cartera de inversión a largo plazo, sea cual sea tu banco o bróker.
+Portfolio Optimizer sirve para construir y revisar una cartera de inversión a largo plazo, sea cual sea tu banco o bróker.
 No te dice qué comprar: te ayuda a ver qué riesgo asumes, cómo se reparte tu dinero y qué puedes esperar a cada plazo.
 
 1. **Crea tu cartera** con el botón **Añadir a mi cartera** de la barra lateral: eliges un producto de la lista,
@@ -618,9 +618,9 @@ histórico de precios.
 *Esta herramienta es educativa y no constituye asesoramiento financiero ni fiscal.*
 """,
     "en": """
-### How to use Portfolio Lab
+### How to use Portfolio Optimizer
 
-Portfolio Lab helps you build and review a long-term investment portfolio, whatever your bank or broker. It does not
+Portfolio Optimizer helps you build and review a long-term investment portfolio, whatever your bank or broker. It does not
 tell you what to buy: it shows the risk you take, how your money is spread and what you can expect at each horizon.
 
 1. **Build your portfolio** with the **Add to my portfolio** button in the sidebar: pick a product from the list,

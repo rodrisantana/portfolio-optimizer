@@ -1,4 +1,4 @@
-"""Portfolio Lab: optimise, backtest and plan a portfolio of ETFs, ETCs, index funds and active funds.
+"""Portfolio Optimizer: optimise, backtest and plan a portfolio of ETFs, ETCs, index funds and active funds.
 
 Run with:  streamlit run app.py          (add ?lang=en to the URL for English)
 """
@@ -72,7 +72,7 @@ from portfolio_optimizer.planning import historical_dca, projection_table
 from portfolio_optimizer.portfolio_io import TEMPLATE, account_instrument, export_portfolio, parse_portfolio, to_excel_bytes
 from portfolio_optimizer.search import instrument_from_dict, instrument_to_dict, search_instruments
 
-APP_NAME = "Portfolio Lab"          # one place to rename the product
+APP_NAME = "Portfolio Optimizer"          # one place to rename the product
 ASSETS = Path(__file__).resolve().parent / "assets"
 LOGO = str(ASSETS / "logo-mark.svg")
 REPO_URL = "https://github.com/rodrisantana/portfolio-optimizer"
