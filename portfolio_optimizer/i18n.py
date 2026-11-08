@@ -492,6 +492,8 @@ ES: dict[str, str] = {
     "Upload a CSV or Excel export from your bank or broker; columns are detected automatically.":
         "Sube un CSV o Excel exportado de tu banco o bróker; las columnas se detectan solas.",
     "Your investments, clearly.": "Tus inversiones, con claridad.",
+    "Your investments,": "Tus inversiones,", "clearly.": "con claridad.", "Markets today": "Mercados hoy",
+    "last month": "último mes", "Portfolio management": "Gestión de carteras",
     # ---- charts
     "Random portfolios": "Carteras aleatorias", "Efficient frontier": "Frontera eficiente",
     "Capital market line": "Línea del mercado de capitales", "Return": "Rentabilidad",

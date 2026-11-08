@@ -13,11 +13,13 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # Validated categorical palette (colour-blind safe on adjacent pairs).
-PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
-MUTED = "#898781"
-INK = "#6B7A90"          # mid-tone ink that stays readable on light and dark backgrounds
-GRID = "rgba(137,135,129,0.22)"
-FONT = '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif'
+# Validated categorical palette for dark surfaces (colour-blind safe on adjacent pairs).
+PALETTE = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"]
+POS, NEG = "#3CCB9E", "#F0606F"
+MUTED = "#8F8F99"
+INK = "#A6A6B0"
+GRID = "rgba(255,255,255,0.06)"
+FONT = 'Geist, system-ui, -apple-system, "Segoe UI", sans-serif'
 
 _translate = None
 
@@ -57,8 +59,9 @@ def _layout(fig: go.Figure, title: str = "", height: int = 420, pct_y: bool = Fa
     fig.update_layout(
         title=dict(text=title, x=0, xanchor="left", font=dict(size=15)),
         height=height, margin=dict(l=10, r=10, t=50 if title else 20, b=10),
-        font=dict(family=FONT, size=12),
-        hoverlabel=dict(font=dict(family=FONT, size=12), bordercolor="rgba(0,0,0,0)"),
+        font=dict(family=FONT, size=12, color="#A6A6B0"),
+        hoverlabel=dict(font=dict(family=FONT, size=12, color="#E7E7EB"), bgcolor="#24252B",
+                        bordercolor="rgba(255,255,255,0.1)"),
         hovermode="closest", showlegend=legend,
         legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="right", x=1, bgcolor="rgba(0,0,0,0)"),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
@@ -81,7 +84,7 @@ def efficient_frontier(frontier, portfolios: dict, asset_mu: pd.Series, asset_vo
     fx = [p.volatility for p in frontier]
     fy = [p.expected_return for p in frontier]
     fig.add_trace(go.Scatter(
-        x=fx, y=fy, mode="lines", name=_t("Efficient frontier"), line=dict(color="#14A898", width=3.5),
+        x=fx, y=fy, mode="lines", name=_t("Efficient frontier"), line=dict(color="#E7E7EB", width=3),
         customdata=np.array([[p.sharpe] for p in frontier]),
         hovertemplate=(_t("Volatility") + " %{x:.1%}<br>" + _t("Return") + " %{y:.1%}<br>Sharpe "
                        "%{customdata[0]:.2f}<extra></extra>")))
@@ -99,7 +102,7 @@ def efficient_frontier(frontier, portfolios: dict, asset_mu: pd.Series, asset_vo
         x=asset_vol.values, y=asset_mu.values, mode="markers+text", name=_t("Assets"),
         text=list(asset_mu.index), textposition="top center", textfont=dict(size=10, color=INK),
         marker=dict(size=9, color=[colors.get(a, MUTED) for a in asset_mu.index],
-                    line=dict(width=2, color="white")),
+                    line=dict(width=2, color="#141519")),
         hovertemplate="<b>%{text}</b><br>" + _t("Volatility") + " %{x:.1%}<br>" + _t("Return") + " %{y:.1%}<extra></extra>"))
 
     cmap = color_map(list(portfolios))
@@ -107,7 +110,7 @@ def efficient_frontier(frontier, portfolios: dict, asset_mu: pd.Series, asset_vo
         fig.add_trace(go.Scatter(
             x=[p.volatility], y=[p.expected_return], mode="markers", name=_t(name),
             marker=dict(size=15, symbol="diamond" if name != "My portfolio" else "star",
-                        color=cmap[name], line=dict(width=2, color="white")),
+                        color=cmap[name], line=dict(width=2, color="#141519")),
             hovertemplate=(f"<b>{_t(name)}</b><br>{_t('Volatility')} %{{x:.1%}}<br>{_t('Return')} %{{y:.1%}}"
                            f"<br>Sharpe {p.sharpe:.2f}<extra></extra>")))
     fig = _layout(fig, "", 520, pct_y=True, pct_x=True)
@@ -193,7 +196,7 @@ def correlation_heatmap(corr: pd.DataFrame) -> go.Figure:
     fig = go.Figure(go.Heatmap(
         z=z, x=corr.columns, y=corr.index, zmin=-1, zmax=1, text=text, texttemplate="%{text}",
         textfont=dict(size=10),
-        colorscale=[[0.0, "#2a78d6"], [0.5, "#f0efec"], [1.0, "#e34948"]],
+        colorscale=[[0.0, "#3987e5"], [0.5, "#24252B"], [1.0, "#e66767"]],
         colorbar=dict(title="ρ", thickness=12),
         hovertemplate="%{y} / %{x}: %{z:.2f}<extra></extra>", xgap=2, ygap=2))
     fig = _layout(fig, "", 120 + 40 * len(corr), legend=False)
@@ -209,7 +212,7 @@ def calendar_heatmap(yearly: pd.DataFrame) -> go.Figure:
     fig = go.Figure(go.Heatmap(
         z=z, x=[str(y) for y in yearly.index], y=list(yearly.columns), zmin=-lim, zmax=lim,
         text=[[("" if np.isnan(v) else f"{v:.0%}") for v in row] for row in z], texttemplate="%{text}",
-        colorscale=[[0.0, "#e34948"], [0.5, "#f0efec"], [1.0, "#2a78d6"]], showscale=False,
+        colorscale=[[0.0, NEG], [0.5, "#24252B"], [1.0, POS]], showscale=False,
         hovertemplate="%{y} %{x}: %{z:.1%}<extra></extra>", xgap=2, ygap=2))
     fig = _layout(fig, "", 90 + 36 * len(yearly.columns), legend=False)
     fig.update_xaxes(showgrid=False, side="top")
@@ -236,7 +239,7 @@ def fan_chart(pct: pd.DataFrame, contributed: np.ndarray, target: float | None =
               sample_paths: np.ndarray | None = None) -> go.Figure:
     x = pct.index
     fig = go.Figure()
-    band = "rgba(42,120,214,{a})"
+    band = "rgba(57,135,229,{a})"
     if sample_paths is not None:
         for path in sample_paths:
             fig.add_trace(go.Scatter(x=x, y=path, mode="lines", line=dict(width=0.6, color="rgba(137,135,129,0.25)"),
@@ -311,7 +314,7 @@ def projection_chart(table: pd.DataFrame, real: bool) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Bar(x=table.index, y=contributed, name=_t("Contributed"), marker_color=PALETTE[0],
                          marker_line_width=0, hovertemplate="%{y:,.0f}<extra>" + _t("Contributed") + "</extra>"))
-    fig.add_trace(go.Bar(x=table.index, y=gains, name=_t("Gains"), marker_color=PALETTE[2], marker_line_width=0,
+    fig.add_trace(go.Bar(x=table.index, y=gains, name=_t("Gains"), marker_color=POS, marker_line_width=0,
                          hovertemplate="%{y:,.0f}<extra>" + _t("Gains") + "</extra>"))
     fig.update_layout(barmode="stack", bargap=0.25)
     fig = _layout(fig, "", 380)
@@ -351,7 +354,7 @@ def allocation_strip(shares: pd.Series, colors: dict[str, str] | None = None, he
         share = v / total
         fig.add_trace(go.Bar(
             x=[share], y=[""], orientation="h", name=_t(k), marker_color=cmap.get(k, MUTED),
-            marker_line=dict(width=2, color="rgba(255,255,255,0.9)"),
+            marker_line=dict(width=2, color="#141519"),
             text=[f"{_t(k)} {share:.0%}" if share >= 0.09 else ""], textposition="inside", insidetextanchor="middle",
             textfont=dict(color="white", size=12), hovertemplate=f"<b>{_t(k)}</b> {share:.1%}<extra></extra>"))
     fig.update_layout(barmode="stack", bargap=0.0)
