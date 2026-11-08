@@ -7,7 +7,7 @@ the point of view of a euro-based retail investor. It started as a plain Markowi
 whole workflow:
 
 * **Every kind of product.** UCITS ETFs, physical ETCs (gold, silver), crypto ETNs, **passive index funds** (Vanguard,
-  Fidelity, iShares, the Amundi range sold at Openbank) and **actively managed funds** (Cobas, Azvalor, Magallanes,
+  Fidelity, iShares, the Amundi index range) and **actively managed funds** (Cobas, Azvalor, Magallanes,
   Bestinver, True Value, Fundsmith, Carmignac, DWS, Comgest...), all found by ISIN. Funds Yahoo does not cover are
   simulated from an ETF (or blend of ETFs) on the same index minus the fee difference, and you can add your own.
 * **Expert long-term forecasts.** Expected returns come from J.P. Morgan's *2027 Long-Term Capital Market

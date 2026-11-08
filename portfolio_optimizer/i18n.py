@@ -26,10 +26,10 @@ ES: dict[str, str] = {
     "ETFs, ETCs, index funds and active funds": "ETFs, ETCs, fondos indexados y fondos activos",
     "Other Yahoo tickers or ISINs (comma separated)": "Otros tickers de Yahoo o ISINs (separados por comas)",
     "Add a fund that is not on the list": "Añadir un fondo que no está en la lista",
-    "For funds Yahoo does not cover well (for example an Amundi fund bought at Openbank). Give the ISIN if you have it "
+    "For funds Yahoo does not cover well (for example some Amundi or Carmignac funds). Give the ISIN if you have it "
     "and an ETF that follows the same index as proxy: real prices are used when they exist, otherwise the fund is "
     "simulated as the proxy minus the fee difference. A blend works too: EUNL.DE:0.6,EUNA.DE:0.4":
-        "Para fondos que Yahoo no cubre bien (por ejemplo un fondo de Amundi contratado en Openbank). Pon el ISIN si lo "
+        "Para fondos que Yahoo no cubre bien (por ejemplo algunos fondos de Amundi o Carmignac). Pon el ISIN si lo "
         "tienes y, como proxy, un ETF que siga el mismo índice: si hay precios reales se usan y, si no, el fondo se "
         "simula como el proxy menos la diferencia de comisiones. También vale una mezcla: EUNL.DE:0.6,EUNA.DE:0.4",
     "Name": "Nombre", "ISIN or ticker": "ISIN o ticker", "Proxy": "Proxy", "Class": "Clase", "Region": "Región",
@@ -138,7 +138,7 @@ ES: dict[str, str] = {
     "(custom)": "(personalizada)",
     "Boglehead core (world + EM + bonds + gold)": "Cartera Boglehead (mundo + emergentes + bonos + oro)",
     "Index funds (Spanish traspaso-friendly)": "Fondos indexados (traspasables en España)",
-    "Openbank / Amundi index funds": "Fondos indexados de Amundi (Openbank)",
+    "Amundi index funds": "Fondos indexados de Amundi",
     "Active vs passive (Spanish value funds vs MSCI World)": "Activa frente a pasiva (value español frente a MSCI World)",
     "All-weather style": "Estilo all-weather", "Equity tilts": "Sesgos de renta variable",
     "Growth + crypto": "Crecimiento + cripto",
@@ -177,8 +177,8 @@ ES: dict[str, str] = {
     "No TER; custody fees may apply depending on the broker.": "Sin TER; puede haber comisión de custodia según el bróker.",
     "Quoted in GBp (pence) on the LSE; converted automatically.":
         "Cotiza en GBp (peniques) en Londres; se convierte automáticamente.",
-    "Common at Openbank. Yahoo history starts in 2022; earlier years use the proxy.":
-        "Habitual en Openbank. El histórico de Yahoo empieza en 2022; los años anteriores usan el proxy.",
+    "Yahoo history starts in 2022; earlier years use the proxy.":
+        "El histórico de Yahoo empieza en 2022; los años anteriores usan el proxy.",
     "Also charges a performance fee, not included in the TER.": "Cobra además comisión de éxito, no incluida en el TER.",
     "No usable Yahoo history: simulated from a 40/60 blend minus fees.":
         "Sin histórico útil en Yahoo: se simula con una mezcla 40/60 menos comisiones.",
@@ -353,11 +353,11 @@ ES: dict[str, str] = {
     "Compound %": "Compuesta %", "Mean %": "Media %", "Source": "Fuente", "Set of assumptions": "Conjunto de hipótesis",
     "J.P. Morgan LTCMA 2027 (EUR)": "J.P. Morgan LTCMA 2027 (EUR)", "Conservative (own)": "Conservadora (propia)",
     "Each point is a portfolio: further right means more risk (volatility), higher means more expected return. The "
-    "black curve is the efficient frontier: the best return you can expect for each level of risk. Diamonds are the "
+    "green curve is the efficient frontier: the best return you can expect for each level of risk. Diamonds are the "
     "strategies; the star is your portfolio. Grey dots are random portfolios, to show how much worse a careless mix "
     "can be.":
         "Cada punto es una cartera: más a la derecha, más riesgo (volatilidad); más arriba, más rentabilidad esperada. "
-        "La curva negra es la frontera eficiente, es decir, lo máximo que puedes esperar ganar para cada nivel de "
+        "La curva verde es la frontera eficiente, es decir, lo máximo que puedes esperar ganar para cada nivel de "
         "riesgo. Los rombos son las estrategias y la estrella tu cartera. Los puntos grises son carteras al azar, para "
         "ver cuánto peor puede salir una mezcla hecha sin criterio.",
     "Expected annual returns in EUR for the next 10-15 years, before fees. By default they are the euro figures of "
@@ -420,6 +420,45 @@ ES: dict[str, str] = {
         "En qué se convirtieron 100 € invertidos al principio en cada activo, con dividendos incluidos y ya netos de "
         "comisiones. La escala logarítmica hace que subidas porcentuales iguales se vean iguales.",
     "What does each strategy mean?": "¿Qué significa cada estrategia?",
+    # ---- portfolio builder and layout
+    "Account or deposit": "Cuenta o depósito",
+    "Add the funds, ETFs or accounts you own (or want to own), import them from a CSV or Excel file, or load an "
+    "example. You need at least two products.":
+        "Añade los fondos, ETFs o cuentas que tienes (o que quieres tener), impórtalos desde un CSV o Excel o carga "
+        "un ejemplo. Hacen falta al menos dos productos.",
+    "Add to my portfolio": "Añadir a mi cartera", "Added to your portfolio: {n}": "Añadido a tu cartera: {n}",
+    "Amount you paid (€, optional)": "Lo que pagaste (€, opcional)",
+    "Build your portfolio product by product, import it from a file or try the example.":
+        "Crea tu cartera producto a producto, impórtala desde un archivo o prueba el ejemplo.",
+    "Build, compare and plan your investment portfolio: ETFs, index and active funds, bonds and cash.":
+        "Construye, compara y planifica tu cartera de inversión: ETFs, fondos indexados y activos, renta fija y "
+        "liquidez.",
+    "Change the value or the amount paid, or select a row and press delete to remove it.":
+        "Cambia el valor o lo que pagaste, o selecciona una fila y pulsa suprimir para quitarla.",
+    "Current value (€)": "Valor actual (€)", "Data since": "Datos desde",
+    "Edit amounts or remove positions": "Editar importes o quitar posiciones",
+    "Educational tool, not advice": "Herramienta educativa, no es asesoramiento",
+    "From the list": "De la lista", "Gain": "Plusvalía", "Gain %": "Plusvalía %",
+    "Load an example portfolio": "Cargar una cartera de ejemplo",
+    "My portfolio: {n} positions · {v}": "Mi cartera: {n} posiciones · {v}",
+    "No price data for: {m}. They are left out of the analysis.":
+        "No hay precios para: {m}. Se dejan fuera del análisis.",
+    "Press Add to my portfolio to choose a fund, ETF or account and type how much you have in it. You can also "
+    "import a CSV or Excel file from the sidebar, or load an example to explore.":
+        "Pulsa Añadir a mi cartera, elige un fondo, ETF o cuenta y escribe cuánto tienes. También puedes importar un "
+        "CSV o Excel desde la barra lateral, o cargar un ejemplo para explorar.",
+    "Product": "Producto", "Products": "Productos", "Products to compare": "Productos para comparar",
+    "Remove all positions": "Quitar todas las posiciones", "Remunerated account": "Cuenta remunerada",
+    "Search any fund or ETF": "Buscar cualquier fondo o ETF",
+    "Start by building your portfolio": "Empieza construyendo tu cartera",
+    "Type to filter: MSCI World, Vanguard, gold, bonds...": "Escribe para filtrar: MSCI World, Vanguard, oro, bonos...",
+    "Used for the gain and the tax estimate. Leave 0 if you do not know it.":
+        "Sirve para calcular la plusvalía y estimar impuestos. Déjalo en 0 si no lo sabes.",
+    "Weight": "Peso", "What do you want to add?": "¿Qué quieres añadir?",
+    "Your portfolio is empty": "Tu cartera está vacía",
+    "Your positions are always included. Add other products here to compare them or use them in the optimiser.":
+        "Tus posiciones siempre se incluyen. Añade aquí otros productos para compararlos o usarlos en el optimizador.",
+    "empty": "vacía", "Import a portfolio or load a session": "Importar cartera o cargar sesión",
     # ---- charts
     "Random portfolios": "Carteras aleatorias", "Efficient frontier": "Frontera eficiente",
     "Capital market line": "Línea del mercado de capitales", "Return": "Rentabilidad",
@@ -512,9 +551,10 @@ GUIDE = {
 Portfolio Lab sirve para construir y revisar una cartera de inversión a largo plazo, sea cual sea tu banco o bróker.
 No te dice qué comprar: te ayuda a ver qué riesgo asumes, cómo se reparte tu dinero y qué puedes esperar a cada plazo.
 
-1. **Elige los productos** en la barra lateral. Puedes partir de una plantilla, marcar productos de la lista,
-   buscar cualquier fondo, ETF o acción por nombre o ISIN, añadir cuentas remuneradas o importar tu cartera desde un
-   CSV o Excel.
+1. **Crea tu cartera** con el botón **Añadir a mi cartera** de la barra lateral: eliges un producto de la lista,
+   buscas cualquier fondo o ETF por nombre o ISIN, o añades una cuenta remunerada, y escribes cuánto tienes. También
+   puedes importar tu cartera desde un CSV o Excel, o cargar un ejemplo. Debajo puedes añadir otros productos solo
+   para compararlos.
 2. **Mira el Resumen.** Cómo se ha comportado cada producto, cuánto llegó a caer y si se parecen entre sí.
 3. **Compara estrategias en el Optimizador.** Cada estrategia es una forma distinta de repartir el dinero entre los
    mismos productos. Abajo tienes cada una explicada.
@@ -550,8 +590,9 @@ histórico de precios.
 Portfolio Lab helps you build and review a long-term investment portfolio, whatever your bank or broker. It does not
 tell you what to buy: it shows the risk you take, how your money is spread and what you can expect at each horizon.
 
-1. **Pick the products** in the sidebar: start from a preset, tick products in the list, search any fund, ETF or
-   share by name or ISIN, add remunerated accounts or import your portfolio from a CSV or Excel file.
+1. **Build your portfolio** with the **Add to my portfolio** button in the sidebar: pick a product from the list,
+   search any fund or ETF by name or ISIN, or add a remunerated account, and type how much you hold. You can also
+   import it from a CSV or Excel file or load an example. Below, add other products just to compare them.
 2. **Look at the Overview**: how each product behaved, how far it fell and whether they move alike.
 3. **Compare strategies in the Optimiser.** Each strategy is a different way of splitting money between the same
    products. Each one is explained below.

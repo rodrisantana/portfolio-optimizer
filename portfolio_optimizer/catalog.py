@@ -152,9 +152,9 @@ CATALOG: tuple[Instrument, ...] = (
           "IUSN.DE", "VG Small Cap"),
     _fund("IE00B18GC888", "Vanguard Global Bond Index Fund EUR Hedged Acc", FIXED_INCOME, 0.0015, "Global",
           "Aggregate", "EUNA.DE", "VG Global Bond"),
-    # Amundi Index Solutions share classes sold by Spanish banks and brokers (Openbank, MyInvestor...).
+    # Amundi Index Solutions share classes available to retail investors in Spain.
     _fund("LU0996182563", "Amundi Index MSCI World AE-C", EQUITY, 0.0030, "Global", "Broad", "EUNL.DE",
-          "Amundi World", note="Common at Openbank. Yahoo history starts in 2022; earlier years use the proxy."),
+          "Amundi World", note="Yahoo history starts in 2022; earlier years use the proxy."),
     _fund("LU0996179007", "Amundi Index S&P 500 (Screened) AE-C", EQUITY, 0.0030, "US", "Broad", "SXR8.DE",
           "Amundi S&P 500"),
     _fund("LU0389811885", "Amundi Index MSCI Europe AE-C", EQUITY, 0.0030, "Europe", "Broad", "IMAE.AS",
@@ -360,7 +360,7 @@ def is_isin(code: str) -> bool:
 PRESETS: dict[str, list[str]] = {
     "Boglehead core (world + EM + bonds + gold)": ["EUNL.DE", "IS3N.DE", "VGEA.DE", "EUNA.DE", "4GLD.DE"],
     "Index funds (Spanish traspaso-friendly)": ["IE00B03HD191", "IE0031786696", "IE00B42W4L06", "IE00B18GC888"],
-    "Openbank / Amundi index funds": ["LU0996182563", "LU0996179007", "LU0389811885", "LU0996177134", "LU0389812933"],
+    "Amundi index funds": ["LU0996182563", "LU0996179007", "LU0389811885", "LU0996177134", "LU0389812933"],
     "Active vs passive (Spanish value funds vs MSCI World)": ["EUNL.DE", "ES0119199000", "ES0112611001",
                                                              "ES0114638036", "LU0690375182"],
     "All-weather style": ["EUNL.DE", "SXRQ.DE", "IBCI.DE", "4GLD.DE", "XEON.DE"],

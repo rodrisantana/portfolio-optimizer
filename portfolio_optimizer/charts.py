@@ -15,9 +15,9 @@ import plotly.graph_objects as go
 # Validated categorical palette (colour-blind safe on adjacent pairs).
 PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
 MUTED = "#898781"
-INK = "#52514e"
+INK = "#6B7A90"          # mid-tone ink that stays readable on light and dark backgrounds
 GRID = "rgba(137,135,129,0.22)"
-FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif'
+FONT = '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif'
 
 _translate = None
 
@@ -58,6 +58,7 @@ def _layout(fig: go.Figure, title: str = "", height: int = 420, pct_y: bool = Fa
         title=dict(text=title, x=0, xanchor="left", font=dict(size=15)),
         height=height, margin=dict(l=10, r=10, t=50 if title else 20, b=10),
         font=dict(family=FONT, size=12),
+        hoverlabel=dict(font=dict(family=FONT, size=12), bordercolor="rgba(0,0,0,0)"),
         hovermode="closest", showlegend=legend,
         legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="right", x=1, bgcolor="rgba(0,0,0,0)"),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
@@ -80,7 +81,7 @@ def efficient_frontier(frontier, portfolios: dict, asset_mu: pd.Series, asset_vo
     fx = [p.volatility for p in frontier]
     fy = [p.expected_return for p in frontier]
     fig.add_trace(go.Scatter(
-        x=fx, y=fy, mode="lines", name=_t("Efficient frontier"), line=dict(color=INK, width=2.5),
+        x=fx, y=fy, mode="lines", name=_t("Efficient frontier"), line=dict(color="#14A898", width=3.5),
         customdata=np.array([[p.sharpe] for p in frontier]),
         hovertemplate=(_t("Volatility") + " %{x:.1%}<br>" + _t("Return") + " %{y:.1%}<br>Sharpe "
                        "%{customdata[0]:.2f}<extra></extra>")))
@@ -337,4 +338,25 @@ def horizon_chart(table: pd.DataFrame) -> go.Figure:
     fig = _layout(fig, "", 380, pct_y=True)
     fig.update_xaxes(title=_t("Years invested"), type="category")
     fig.update_yaxes(title=_t("Annualised return"))
+    return fig
+
+
+def allocation_strip(shares: pd.Series, colors: dict[str, str] | None = None, height: int = 110) -> go.Figure:
+    """One horizontal 100% bar split by category, the way broker apps show a portfolio's mix."""
+    shares = shares[shares > 0.0005].sort_values(ascending=False)
+    total = float(shares.sum()) or 1.0
+    cmap = colors or {k: (PALETTE[i] if i < len(PALETTE) else MUTED) for i, k in enumerate(shares.index)}
+    fig = go.Figure()
+    for k, v in shares.items():
+        share = v / total
+        fig.add_trace(go.Bar(
+            x=[share], y=[""], orientation="h", name=_t(k), marker_color=cmap.get(k, MUTED),
+            marker_line=dict(width=2, color="rgba(255,255,255,0.9)"),
+            text=[f"{_t(k)} {share:.0%}" if share >= 0.09 else ""], textposition="inside", insidetextanchor="middle",
+            textfont=dict(color="white", size=12), hovertemplate=f"<b>{_t(k)}</b> {share:.1%}<extra></extra>"))
+    fig.update_layout(barmode="stack", bargap=0.0)
+    fig = _layout(fig, "", height)
+    fig.update_layout(margin=dict(l=0, r=0, t=36, b=0))
+    fig.update_xaxes(visible=False, range=[0, 1])
+    fig.update_yaxes(visible=False)
     return fig

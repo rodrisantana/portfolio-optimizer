@@ -2,7 +2,7 @@
   "widgets": {
     "lang": "es",
     "source": "live",
-    "catalog_assets": ["EUNL.DE", "IS3N.DE", "LU0996182563", "ES0119199000", "VGEA.DE", "EUNA.DE", "4GLD.DE"],
+    "catalog_assets": ["EUNA.DE", "IS3Q.DE"],
     "base": "EUR",
     "freq": "weekly",
     "r_method": "long_term",
@@ -14,13 +14,15 @@
     {"Name": "Fondo mixto de ejemplo", "ISIN or ticker": "", "Proxy": "EUNL.DE:0.6,EUNA.DE:0.4", "TER %": 1.2,
      "Class": "Mixto", "Region": "Global", "Management": "Activa"}
   ],
-  "holdings": {
+  "accounts": [{"Name": "Cuenta remunerada", "TAE %": 2.25, "Type": "Cuenta remunerada"}],
+  "portfolio": {
     "EUNL.DE": {"value": 9200, "cost": 7000},
-    "LU0996182563": {"value": 5000, "cost": 4100},
+    "IE00B03HD191": {"value": 5000, "cost": 4100},
     "ES0119199000": {"value": 2500, "cost": 2300},
     "IS3N.DE": {"value": 1800, "cost": 1700},
     "VGEA.DE": {"value": 2100, "cost": 2300},
     "4GLD.DE": {"value": 1300, "cost": 900},
-    "Fondo mixto de ejemplo": {"value": 3000, "cost": 2800}
+    "Fondo mixto de ejemplo": {"value": 3000, "cost": 2800},
+    "Cuenta remunerada": {"value": 3000, "cost": 3000}
   }
 }
