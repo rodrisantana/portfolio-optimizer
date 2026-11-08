@@ -26,7 +26,7 @@ def test_to_number():
 
 def test_parse_template():
     df = parse_portfolio(TEMPLATE.encode(), "cartera.csv")
-    assert list(df["identifier"][:3]) == ["IE00B4L5Y983", "LU0996182563", "ES0119199000"]
+    assert list(df["identifier"][:3]) == ["IE00B4L5Y983", "IE00B03HD191", "ES0119199000"]
     acc = df.iloc[3]
     assert acc["kind"] == "Account" and acc["rate"] == pytest.approx(0.0225) and acc["value"] == 6000
 

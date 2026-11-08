@@ -1,6 +1,51 @@
+# Visual identity: navy sidebar, cool off-white canvas, teal accent (fintech look), one typeface family.
 [theme]
-primaryColor = "#2a78d6"
-font = "sans serif"
+font = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+headingFont = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+headingFontWeights = [800, 700, 700, 600, 600, 600]
+baseRadius = "12px"
+buttonRadius = "10px"
+metricValueFontSize = "1.65rem"
+metricValueFontWeight = 700
+showWidgetBorder = true
+
+[theme.light]
+primaryColor = "#0E8F82"
+backgroundColor = "#F4F7FB"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0F1B2D"
+borderColor = "#DFE6EF"
+linkColor = "#0E8F82"
+dataframeHeaderBackgroundColor = "#EEF3F8"
+greenColor = "#0E9F6E"
+redColor = "#D64545"
+
+[theme.light.sidebar]
+backgroundColor = "#0B1C33"
+secondaryBackgroundColor = "#13294A"
+textColor = "#E4ECF7"
+primaryColor = "#2CC5B3"
+borderColor = "#22406A"
+linkColor = "#7FE3D6"
+
+[theme.dark]
+primaryColor = "#2CC5B3"
+backgroundColor = "#0A1220"
+secondaryBackgroundColor = "#111D30"
+textColor = "#E4ECF7"
+borderColor = "#22314A"
+linkColor = "#7FE3D6"
+dataframeHeaderBackgroundColor = "#14223A"
+greenColor = "#34D399"
+redColor = "#F87171"
+
+[theme.dark.sidebar]
+backgroundColor = "#06101F"
+secondaryBackgroundColor = "#0F1E36"
+textColor = "#E4ECF7"
+primaryColor = "#2CC5B3"
+borderColor = "#1C2E4C"
 
 [server]
 headless = true

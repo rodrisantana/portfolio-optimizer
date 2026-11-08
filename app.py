@@ -74,9 +74,40 @@ st.set_page_config(page_title="Portfolio Lab", page_icon="📈", layout="wide", 
 
 st.markdown("""
 <style>
-.block-container {padding-top: 2rem; max-width: 1400px;}
-[data-testid="stMetricValue"] {font-size: 1.5rem;}
-[data-testid="stMetric"] {background: rgba(137,135,129,0.07); border-radius: 10px; padding: 12px 14px;}
+.block-container {padding-top: 3.2rem; max-width: 1380px;}
+/* metric tiles as cards */
+[data-testid="stMetric"] {border: 1px solid rgba(120,140,170,0.22); border-radius: 14px; padding: 14px 16px;
+  background: color-mix(in srgb, currentColor 2%, transparent); box-shadow: 0 1px 2px rgba(15,27,45,0.04);}
+[data-testid="stMetricLabel"] p {font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.7;}
+/* tabs as pills */
+.stTabs [role="tablist"] {gap: 8px; flex-wrap: wrap; border-bottom: none; padding-bottom: 6px;}
+.stTabs [data-testid="stTab"] {height: 40px; padding: 0 18px; border-radius: 999px;
+  border: 1px solid rgba(120,140,170,0.32); display: flex; align-items: center;}
+.stTabs [data-testid="stTab"] p {font-weight: 600; font-size: 0.93rem;}
+.stTabs [data-testid="stTab"][aria-selected="true"] {background: #0E8F82; border-color: #0E8F82;}
+.stTabs [data-testid="stTab"][aria-selected="true"] p {color: #fff !important;}
+.stTabs [role="tablist"] > div:not([data-testid="stTab"]) {display: none;}
+h2, h3 {letter-spacing: -0.01em;}
+/* hero */
+.pl-hero {border-radius: 20px; padding: 26px 30px; margin-bottom: 18px; color: #fff;
+  background: radial-gradient(120% 140% at 100% 0%, #13a594 0%, #0e6f78 32%, #0b1c33 75%);
+  display: flex; flex-wrap: wrap; gap: 18px 40px; align-items: flex-end; justify-content: space-between;}
+.pl-hero h1 {font-size: 2.1rem; font-weight: 800; margin: 0; color: #fff; letter-spacing: -0.02em; padding: 0;}
+.pl-hero .tag {opacity: 0.85; margin-top: 4px; max-width: 46ch; font-size: 0.98rem;}
+.pl-hero .kpis {display: flex; gap: 28px; flex-wrap: wrap;}
+.pl-hero .kpi .l {font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75;}
+.pl-hero .kpi .v {font-size: 1.55rem; font-weight: 800; font-variant-numeric: tabular-nums;}
+.pl-hero .chip {display: inline-block; font-size: 0.75rem; padding: 3px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.14); margin: 8px 6px 0 0;}
+.pos {color: #0E9F6E;} .neg {color: #D64545;}
+.pl-hero .pos {color: #7CF0C5;} .pl-hero .neg {color: #FFB4B4;}
+/* empty state */
+.pl-empty {border: 1.5px dashed rgba(14,143,130,0.45); border-radius: 18px; padding: 28px; text-align: left;
+  background: color-mix(in srgb, #0E8F82 5%, transparent);}
+.pl-empty h3 {margin-top: 0;}
+.pl-card {border: 1px solid rgba(120,140,170,0.22); border-radius: 14px; padding: 14px 16px; margin-bottom: 8px;}
+.pl-badge {display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: rgba(14,143,130,0.12); color: #0E8F82; margin-left: 6px;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -221,6 +252,116 @@ CATALOG_SYMBOLS = {i.symbol for i in CATALOG}
 ACCOUNT_COLUMNS = ["Name", "TAE %", "Type"]
 
 
+def current_portfolio() -> dict[str, dict]:
+    """Positions as {symbol: {"value": €, "cost": €}}, including edits made in the positions table."""
+    return dict(st.session_state.get("_pf_effective", st.session_state.get("portfolio", {})))
+
+
+def save_portfolio(pf: dict[str, dict]) -> None:
+    st.session_state["portfolio"] = pf
+    st.session_state["_pf_effective"] = pf
+    st.session_state.pop("pf_ed", None)          # rebuild the positions editor from the new state
+
+
+def add_to_portfolio(inst: Instrument, value: float, cost: float) -> None:
+    pf = current_portfolio()
+    if inst.rate is not None:
+        rows = [r for r in st.session_state.get("accounts_seed", []) if r.get("Name") != inst.symbol]
+        rows.append({"Name": inst.symbol, "TAE %": round(inst.rate * 100, 3), "Type": t(inst.kind)})
+        st.session_state["accounts_seed"] = rows
+        st.session_state.pop("accounts_ed", None)
+    elif inst.symbol not in CATALOG_SYMBOLS:
+        st.session_state.setdefault("added", {})[inst.symbol] = instrument_to_dict(inst)
+    prev = pf.get(inst.symbol, {"value": 0.0, "cost": 0.0})
+    pf[inst.symbol] = {"value": prev["value"] + value, "cost": prev["cost"] + (cost or 0.0)}
+    save_portfolio(pf)
+    st.session_state["_import_msg"] = t("Added to your portfolio: {n}").format(n=inst.display)
+
+
+SAMPLE_PORTFOLIO = {"EUNL.DE": (9200, 7000), "IE00B03HD191": (5000, 4100), "ES0119199000": (2500, 2300),
+                    "IS3N.DE": (1800, 1700), "VGEA.DE": (2100, 2300), "4GLD.DE": (1300, 900)}
+
+
+def load_sample_portfolio() -> None:
+    """Callback: a realistic example portfolio, so first-time visitors see every tab working."""
+    pf = {k: {"value": float(v), "cost": float(c)} for k, (v, c) in SAMPLE_PORTFOLIO.items()}
+    acc = account_instrument(t("Remunerated account"), 0.0225)
+    st.session_state["accounts_seed"] = [{"Name": acc.symbol, "TAE %": 2.25, "Type": t("Account")}]
+    st.session_state.pop("accounts_ed", None)
+    pf[acc.symbol] = {"value": 3000.0, "cost": 3000.0}
+    st.session_state["source"] = "live"
+    save_portfolio(pf)
+
+
+def clear_portfolio() -> None:
+    save_portfolio({})
+
+
+@st.dialog(t("Add to my portfolio"))
+def add_position_dialog() -> None:
+    demo_mode = st.session_state.get("source") == "demo"
+    modes = ["catalog", "account"] if demo_mode else ["catalog", "search", "account"]
+    mode_labels = {"catalog": t("From the list"), "search": t("Search any fund or ETF"),
+                   "account": t("Account or deposit")}
+    mode = st.segmented_control(t("What do you want to add?"), modes, default="catalog", key="dlg_mode",
+                                format_func=mode_labels.get) or "catalog"
+    inst = None
+    if mode == "catalog":
+        pool = [i for i in CATALOG if not demo_mode or i.symbol in load_demo().prices.columns]
+        sym = st.selectbox(t("Product"), [i.symbol for i in pool], index=None, key="dlg_sym",
+                           placeholder=t("Type to filter: MSCI World, Vanguard, gold, bonds..."),
+                           format_func=lambda s_: f"{find(s_).display} · {t(find(s_).kind)} · {find(s_).name}")
+        inst = find(sym) if sym else None
+    elif mode == "search":
+        q = st.text_input(t("Name, ISIN or ticker"), key="dlg_q", placeholder="Fidelity MSCI World, IE00B4L5Y983")
+        if st.button(t("Search"), key="dlg_go") and q.strip():
+            with st.spinner(t("Searching...")):
+                try:
+                    st.session_state["dlg_hits"] = [instrument_to_dict(h["instrument"]) for h in search_instruments(q)]
+                except Exception:
+                    st.session_state["dlg_hits"] = []
+            if not st.session_state["dlg_hits"]:
+                st.info(t("Nothing with price history found. Try another name or add it as your own fund."))
+        hits = st.session_state.get("dlg_hits", [])
+        if hits:
+            k = st.selectbox(t("Results"), range(len(hits)), key="dlg_pick",
+                             format_func=lambda i: f"{hits[i]['name']} · {t(hits[i]['kind'])}")
+            inst = instrument_from_dict(hits[k])
+    else:
+        name = st.text_input(t("Name"), value=t("Remunerated account"), key="dlg_acc_name")
+        tae = st.number_input("TAE %", 0.0, 15.0, 2.0, 0.05, key="dlg_tae")
+        kind = st.segmented_control(t("Type"), ["Account", "Deposit"], default="Account", key="dlg_kind",
+                                    format_func=t) or "Account"
+        inst = account_instrument(name.strip() or t("Remunerated account"), tae / 100, kind) if name.strip() else None
+    if inst is not None and mode != "account":
+        st.markdown(f"<div class='pl-card'><b>{inst.name}</b><span class='pl-badge'>{t(inst.kind)}</span>"
+                    f"<span class='pl-badge'>{t(inst.asset_class)}</span><br><small>TER {inst.ter * 100:.2f} %"
+                    f" · {t(inst.management)}</small></div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    value = c1.number_input(t("Current value (€)"), 0.0, 1e9, 1000.0, 100.0, key="dlg_value")
+    cost = c2.number_input(t("Amount you paid (€, optional)"), 0.0, 1e9, 0.0, 100.0, key="dlg_cost",
+                           help=t("Used for the gain and the tax estimate. Leave 0 if you do not know it."))
+    if st.button(t("Add to my portfolio"), type="primary", disabled=inst is None or value <= 0, width="stretch"):
+        add_to_portfolio(inst, value, cost)
+        st.rerun()
+
+
+def resolve_holding_key(key: str) -> str | None:
+    """Old sessions stored holdings by display label; map a label or identifier to a symbol."""
+    inst = find(key)
+    if inst is not None:
+        return inst.symbol
+    for i in CATALOG:
+        if i.display == key or i.short == key:
+            return i.symbol
+    for sym_, d_ in st.session_state.get("added", {}).items():
+        if instrument_from_dict(d_).display == key:
+            return sym_
+    if any(r.get("Name") == key for r in st.session_state.get("accounts_seed", [])):
+        return key
+    return key if " " not in key else None
+
+
 def apply_import(df: pd.DataFrame) -> None:
     """Turn imported positions into the app's universe and holdings (runs before the widgets are built)."""
     catalog_syms, added, accounts, seed, missing = [], {}, [], {}, []
@@ -247,11 +388,11 @@ def apply_import(df: pd.DataFrame) -> None:
                 catalog_syms.append(inst.symbol)
             else:
                 added[inst.symbol] = instrument_to_dict(inst)
-        seed[inst.display] = {"value": float(r.value), "cost": float(r.cost)}
+        seed[inst.symbol] = {"value": float(r.value), "cost": float(r.cost)}
     st.session_state.update({"source": "live", "preset": "(custom)", "_preset": "(custom)", "extra": "",
-                             "catalog_assets": list(dict.fromkeys(catalog_syms)), "added": added,
-                             "accounts_seed": accounts, "holdings_seed": seed})
-    for stale in ("holdings", "inst", "mu_edit", "accounts_ed"):
+                             "catalog_assets": [], "added": added, "accounts_seed": accounts})
+    save_portfolio(seed)
+    for stale in ("inst", "mu_edit", "accounts_ed"):
         st.session_state.pop(stale, None)
     msg = t("Imported {n} positions.").format(n=len(seed))
     if missing:
@@ -263,10 +404,18 @@ def sidebar():
     for k_, v_ in DEFAULTS.items():
         st.session_state.setdefault(k_, v_)
     sb = st.sidebar
-    sb.title("Portfolio Lab")
-    sb.caption(t("Optimisation, backtests and savings plans for ETFs, ETCs, index funds and active funds."))
+    sb.markdown("## 📈 Portfolio Lab")
+    pf_now = current_portfolio()
+    if sb.button(t("Add to my portfolio"), type="primary", width="stretch", key="sb_add", icon=":material/add:"):
+        add_position_dialog()
+    if pf_now:
+        total_ = sum(v["value"] for v in pf_now.values())
+        sb.caption(t("My portfolio: {n} positions · {v}").format(n=len(pf_now), v=money(total_, "EUR")))
+    else:
+        sb.caption(t("Build your portfolio product by product, import it from a file or try the example."))
 
-    session = sb.file_uploader(t("Load a saved session (.json)"), type=["json"], key="session_file",
+    files_box = sb.expander(t("Import a portfolio or load a session"), icon=":material/upload_file:")
+    session = files_box.file_uploader(t("Load a saved session (.json)"), type=["json"], key="session_file",
                                help=t("Restores your universe, holdings and settings."))
     if session is not None and st.session_state.get("_loaded") != session.file_id:
         cfg = json.loads(session.getvalue())
@@ -277,16 +426,23 @@ def sidebar():
             if k == "source" and v not in ("live", "demo"):
                 v = "demo" if "demo" in str(v).lower() else "live"
             st.session_state[k] = v
-        st.session_state["holdings_seed"] = cfg.get("holdings", {})
         st.session_state["custom_seed"] = cfg.get("custom_funds", [])
         st.session_state["added"] = cfg.get("added", {})
         st.session_state["accounts_seed"] = cfg.get("accounts", [])
+        pf = cfg.get("portfolio")
+        if pf is None:                            # sessions saved before v2.2 keyed holdings by label
+            pf = {}
+            for k_, v_ in cfg.get("holdings", {}).items():
+                sym_ = resolve_holding_key(k_)
+                if sym_ and (v_.get("value") or v_.get("cost")):
+                    pf[sym_] = {"value": float(v_.get("value", 0)), "cost": float(v_.get("cost", 0))}
+        save_portfolio(pf)
         for stale in ("holdings", "inst", "mu_edit", "groups", "custom_funds", "cma_edit", "accounts_ed"):
             st.session_state.pop(stale, None)
         st.session_state["_loaded"] = session.file_id
         st.rerun()
 
-    imported = sb.file_uploader(t("Import a portfolio (CSV or Excel)"), type=["csv", "xlsx", "xls"], key="pf_import",
+    imported = files_box.file_uploader(t("Import a portfolio (CSV or Excel)"), type=["csv", "xlsx", "xls"], key="pf_import",
                                 help=t("Columns are detected automatically (ISIN or ticker, name, value, cost, type, "
                                        "TAE). Download a template from the My portfolio tab."))
     if imported is not None and st.session_state.get("_imported") != imported.file_id:
@@ -349,6 +505,9 @@ def sidebar():
                 if set(keep) != set(added):
                     st.session_state["added"] = {k_: v_ for k_, v_ in added.items() if k_ in keep}
                     st.rerun()
+        sb.markdown(f"**{t('Products to compare')}**")
+        sb.caption(t("Your positions are always included. Add other products here to compare them or use them in "
+                     "the optimiser."))
         preset = sb.selectbox(t("Start from a preset"), ["(custom)"] + list(PRESETS), key="preset", format_func=t)
         options = [i.symbol for i in CATALOG]
         labels = {i.symbol: f"{i.display} · {t(i.kind)} · {i.name}" for i in CATALOG}
@@ -361,7 +520,7 @@ def sidebar():
                                   placeholder="AAPL, IE00B3RBWM25, MEUD.PA")
         extra = [x.strip() for x in extra_txt.split(",") if x.strip()]
         with sb.expander(t("Add a fund that is not on the list")):
-            st.caption(t("For funds Yahoo does not cover well (for example an Amundi fund bought at Openbank). "
+            st.caption(t("For funds Yahoo does not cover well (for example some Amundi or Carmignac funds). "
                          "Give the ISIN if you have it and an ETF that follows the same index as proxy: real prices "
                          "are used when they exist, otherwise the fund is simulated as the proxy minus the fee "
                          "difference. A blend works too: EUNL.DE:0.6,EUNA.DE:0.4"))
@@ -453,7 +612,20 @@ def sidebar():
 
 # =========================================================================== load data
 cfg = sidebar()
-st.title("Portfolio Lab")
+hero_slot = st.container()
+
+
+def render_hero(kpis: list[tuple[str, str, str]] | None = None) -> None:
+    chips = ["Yahoo Finance", "J.P. Morgan LTCMA 2027", "EUR", t("Educational tool, not advice")]
+    k_html = "".join(f"<div class='kpi'><div class='l'>{l_}</div><div class='v {c_}'>{v_}</div></div>"
+                     for l_, v_, c_ in (kpis or []))
+    with hero_slot:
+        st.markdown(
+            f"<div class='pl-hero'><div><h1>Portfolio Lab</h1><div class='tag'>"
+            f"{t('Build, compare and plan your investment portfolio: ETFs, index and active funds, bonds and cash.')}"
+            f"</div>{''.join(f'<span class=chip>{c}</span>' for c in chips)}</div>"
+            f"<div class='kpis'>{k_html}</div></div>", unsafe_allow_html=True)
+
 
 if st.session_state.get("_import_msg"):
     st.info(st.session_state.pop("_import_msg"))
@@ -461,9 +633,19 @@ user_instruments = cfg["extras"] + cfg["accounts"]
 for inst in user_instruments:
     register(inst)
 custom_spec = json.dumps([instrument_to_dict(i) for i in user_instruments], sort_keys=True, default=list)
-ids = list(dict.fromkeys(cfg["chosen"] + cfg["extra"] + [i.symbol for i in user_instruments]))
-if not ids and not cfg["upload"]:
-    st.info(t("Pick at least two assets in the sidebar to begin."))
+portfolio_syms = [s_ for s_ in current_portfolio()
+                  if not cfg["demo"] or s_ in load_demo().prices.columns or describe(s_).rate is not None]
+ids = list(dict.fromkeys(cfg["chosen"] + cfg["extra"] + [i.symbol for i in user_instruments] + portfolio_syms))
+if len(ids) < 2 and not cfg["upload"]:
+    render_hero()
+    _msg = t("Add the funds, ETFs or accounts you own (or want to own), import them from a CSV or Excel file, or "
+             "load an example. You need at least two products.")
+    st.markdown(f"<div class='pl-empty'><h3>{t('Start by building your portfolio')}</h3><p>{_msg}</p></div>",
+                unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    if c1.button(t("Add to my portfolio"), type="primary", width="stretch", key="empty_add"):
+        add_position_dialog()
+    c2.button(t("Load an example portfolio"), on_click=load_sample_portfolio, width="stretch", key="empty_sample")
     st.stop()
 
 try:
@@ -480,6 +662,7 @@ try:
         else:
             data = get_prices(tuple(ids), cfg["base"], cfg["backfill"], cfg["clean"], cfg["upload"], custom_spec)
 except Exception as exc:
+    render_hero()
     st.error(t("Could not load prices: {err}").format(err=exc))
     st.caption(t("Tip: switch to the offline demo dataset, or check the ticker on finance.yahoo.com."))
     st.stop()
@@ -654,30 +837,58 @@ except InfeasibleError as exc:
     st.error(t("Constraints are infeasible: {err}").format(err=exc))
     st.stop()
 
-# ---------------------------------------------------------------- holdings (input lives in the My portfolio tab)
+# ---------------------------------------------------------------- holdings (built with the dialog, edited here)
 with tabs[3]:
-    st.subheader(t("Your current positions"))
-    st.caption(t("Enter the market value of each position (and what you paid, for the tax estimate). Leave zeros "
-                 "for assets you do not own. Funds that are not in the list can be added from the sidebar."))
-    seed = st.session_state.get("holdings_seed", {})
-    hold_df = st.data_editor(
-        pd.DataFrame({"Asset": assets,
-                      "Value": [float(seed.get(a, seed.get(inv_label[a], {})).get("value", 0.0)) for a in assets],
-                      "Cost basis": [float(seed.get(a, seed.get(inv_label[a], {})).get("cost", 0.0)) for a in assets]}),
-        hide_index=True, key="holdings", disabled=["Asset"],
-        column_config={"Asset": st.column_config.TextColumn(t("Asset")),
-                       "Value": st.column_config.NumberColumn(t("Market value ({c})").format(c=ccy), min_value=0.0,
-                                                              step=100.0, format="%.2f"),
-                       "Cost basis": st.column_config.NumberColumn(t("Cost basis ({c})").format(c=ccy), min_value=0.0,
-                                                                   step=100.0, format="%.2f")})
-holdings = [Holding(a, float(v or 0.0), float(c or 0.0))
-            for a, v, c in zip(hold_df["Asset"], hold_df["Value"], hold_df["Cost basis"])]
+    pf_top = st.container()
+    pf_base = st.session_state.get("portfolio", {})
+    pf_rows = pd.DataFrame({
+        "Symbol": list(pf_base),
+        "Product": [describe(s_).display for s_ in pf_base],
+        "Value": [float(v["value"]) for v in pf_base.values()],
+        "Cost basis": [float(v["cost"]) for v in pf_base.values()],
+    })
+    if len(pf_rows):
+        with st.expander(t("Edit amounts or remove positions"), icon=":material/edit:"):
+            st.caption(t("Change the value or the amount paid, or select a row and press delete to remove it."))
+            pf_rows = st.data_editor(
+                pf_rows, hide_index=True, key="pf_ed", num_rows="delete", disabled=["Symbol", "Product"],
+                column_order=["Product", "Value", "Cost basis"],
+                column_config={"Product": st.column_config.TextColumn(t("Product")),
+                               "Value": st.column_config.NumberColumn(t("Market value ({c})").format(c=ccy),
+                                                                      min_value=0.0, step=100.0, format="%.2f"),
+                               "Cost basis": st.column_config.NumberColumn(t("Cost basis ({c})").format(c=ccy),
+                                                                           min_value=0.0, step=100.0, format="%.2f")})
+            st.button(t("Remove all positions"), on_click=clear_portfolio, key="pf_clear")
+    st.session_state["_pf_effective"] = {
+        sym_: {"value": float(v_ or 0), "cost": float(c_ or 0)}
+        for sym_, v_, c_ in zip(pf_rows["Symbol"], pf_rows["Value"], pf_rows["Cost basis"])}
+holdings = []
+missing_pos = []
+for sym_, v_ in st.session_state["_pf_effective"].items():
+    lab = label.get(sym_)
+    if lab is None:
+        missing_pos.append(describe(sym_).display)
+        continue
+    holdings.append(Holding(lab, float(v_["value"]), float(v_["cost"])))
 has_holdings = sum(h.value for h in holdings) > 0
 plan = None
 opt_eval = PortfolioOptimizer(mu, cov, rf)
 if has_holdings:
     my_w = pd.Series({h.asset: h.value for h in holdings}).reindex(assets).fillna(0.0)
     portfolios = {**portfolios, "My portfolio": opt_eval.evaluate((my_w / my_w.sum()).values, "My portfolio")}
+    _me = portfolios["My portfolio"]
+    _tot = sum(h.value for h in holdings)
+    _cost = sum(h.cost_basis for h in holdings)
+    _g = (_tot / _cost - 1) if _cost else None
+    render_hero([(t("My portfolio"), money(_tot, ccy), ""),
+                 (t("Unrealised gain"), pct(_g) if _g is not None else "n/a",
+                  "" if _g is None else ("pos" if _g >= 0 else "neg")),
+                 (t("Expected return"), pct(_me.expected_return), ""),
+                 (t("Volatility"), pct(_me.volatility), "")])
+else:
+    render_hero([(t("Products"), str(len(assets)), ""),
+                 (t("Data since"), f"{prices.index[0]:%m/%Y}", ""),
+                 (t("My portfolio"), t("empty"), "")])
 
 
 def render_breakdown(selection: dict[str, pd.Series], key: str) -> None:
@@ -764,7 +975,7 @@ with tabs[2]:
         shown["Target volatility"] = custom
     with c1:
         st.caption(t("Each point is a portfolio: further right means more risk (volatility), higher means more "
-                     "expected return. The black curve is the efficient frontier: the best return you can expect for "
+                     "expected return. The green curve is the efficient frontier: the best return you can expect for "
                      "each level of risk. Diamonds are the strategies; the star is your portfolio. Grey dots are random "
                      "portfolios, to show how much worse a careless mix can be."))
         st.plotly_chart(charts.efficient_frontier(
@@ -810,9 +1021,19 @@ with tabs[2]:
                  "portfolio equities bring around 90% of the risk."))
 
 # =========================================================================== My portfolio tab
-with tabs[3]:
+with pf_top:
+    h1, h2 = st.columns([3, 1], vertical_alignment="bottom")
+    h1.subheader(t("My portfolio"))
+    if h2.button(t("Add to my portfolio"), type="primary", width="stretch", key="tab_add", icon=":material/add:"):
+        add_position_dialog()
+    if missing_pos:
+        st.warning(t("No price data for: {m}. They are left out of the analysis.").format(m=", ".join(missing_pos)))
     if not has_holdings:
-        st.info(t("Enter your positions above to compare them with the optimised portfolios and plan a rebalance."))
+        _msg = t("Press Add to my portfolio to choose a fund, ETF or account and type how much you have in it. You "
+                 "can also import a CSV or Excel file from the sidebar, or load an example to explore.")
+        st.markdown(f"<div class='pl-empty'><h3>{t('Your portfolio is empty')}</h3><p>{_msg}</p></div>",
+                    unsafe_allow_html=True)
+        st.button(t("Load an example portfolio"), on_click=load_sample_portfolio, key="tab_sample")
     else:
         me = portfolios["My portfolio"]
         total = sum(h.value for h in holdings)
@@ -823,8 +1044,37 @@ with tabs[3]:
                     pct(total / cost_total - 1) if cost_total else None)
         k[2].metric(t("Expected return"), pct(me.expected_return))
         k[3].metric(t("Volatility"), pct(me.volatility))
-        k[4].metric(t("Annual cost (TER)"), f"{money(float(me.weights @ ter) * total, ccy)} "
-                                            f"({pct(float(me.weights @ ter), 2)})")
+        k[4].metric(t("Annual cost (TER)"), money(float(me.weights @ ter) * total, ccy),
+                    f"TER {pct(float(me.weights @ ter), 2)}", delta_color="off", delta_arrow="off")
+        st.plotly_chart(charts.allocation_strip(tr_index(breakdown_table({"m": me.weights}, meta, "Asset class")["m"])),
+                        width="stretch", key="strip_mine", config={"displayModeBar": False})
+        pos = pd.DataFrame([{
+            "Product": h.asset, "Type": t(meta[h.asset].kind), "Class": t(meta[h.asset].asset_class),
+            "Value": h.value, "Weight": h.value / total,
+            "Gain": (h.value - h.cost_basis) if h.cost_basis else np.nan,
+            "Gain %": (h.value / h.cost_basis - 1) if h.cost_basis else np.nan} for h in holdings]
+        ).sort_values("Value", ascending=False)
+
+        def _pl_color(v):
+            if pd.isna(v):
+                return ""
+            return "color: #0E9F6E; font-weight: 600" if v >= 0 else "color: #D64545; font-weight: 600"
+
+        st.dataframe(
+            styled(pos, {"Value": "{:,.0f}", "Gain": "{:+,.0f}", "Gain %": "{:+.1%}"}, na_rep="-")
+            .map(_pl_color, subset=["Gain", "Gain %"]),
+            hide_index=True, width="stretch",
+            column_config={"Product": st.column_config.TextColumn(t("Product")),
+                           "Type": st.column_config.TextColumn(t("Type")),
+                           "Class": st.column_config.TextColumn(t("Class")),
+                           "Value": st.column_config.NumberColumn(t("Value")),
+                           "Weight": st.column_config.ProgressColumn(t("Weight"), format="percent", min_value=0,
+                                                                     max_value=1),
+                           "Gain": st.column_config.NumberColumn(t("Gain")),
+                           "Gain %": st.column_config.NumberColumn(t("Gain %"))})
+
+with tabs[3]:
+    if has_holdings:
         try:
             same_risk = PortfolioOptimizer(mu, cov, rf, _constraints_from_json(spec)).efficient_risk(
                 me.volatility)
@@ -894,8 +1144,7 @@ with tabs[3]:
                "custom_funds": st.session_state.get("custom_rows", []),
                "added": st.session_state.get("added", {}),
                "accounts": st.session_state.get("account_rows", []),
-               "holdings": {h.asset: {"value": h.value, "cost": h.cost_basis}
-                            for h in holdings if h.value or h.cost_basis}}
+               "portfolio": st.session_state.get("_pf_effective", {})}
     st.download_button(t("Download session (.json)"), json.dumps(payload, indent=2, default=str).encode(),
                        "portfolio_session.json", "application/json")
 

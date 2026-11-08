@@ -32,7 +32,7 @@ ACCOUNT_WORDS = {"account": "Account", "cuenta": "Account", "cuenta remunerada":
 TEMPLATE = (
     "ISIN o ticker;Nombre;Tipo;Valor;Coste;TAE %\n"
     "IE00B4L5Y983;iShares Core MSCI World;ETF;12000;9500;\n"
-    "LU0996182563;Amundi Index MSCI World AE-C;Fondo indexado;5000;4200;\n"
+    "IE00B03HD191;Vanguard Global Stock Index Fund;Fondo indexado;5000;4200;\n"
     "ES0119199000;Cobas Internacional FI;Fondo activo;2000;1800;\n"
     ";Cuenta remunerada de ejemplo;Cuenta remunerada;6000;6000;2,25\n"
 )
