@@ -6,6 +6,7 @@ Run with:  streamlit run app.py          (add ?lang=en to the URL for English)
 from __future__ import annotations
 
 import base64
+import html
 import json
 from dataclasses import replace
 from datetime import date
@@ -83,78 +84,14 @@ st.set_page_config(page_title=APP_NAME, page_icon=str(ASSETS / "logo-mark-64.png
                    initial_sidebar_state="expanded")
 st.logo(LOGO, icon_image=LOGO, size="large")
 
-st.markdown("""
-<style>
-.block-container {padding-top: 3.2rem; max-width: 1380px;}
-/* metric tiles as cards */
-[data-testid="stMetric"] {border: 1px solid rgba(120,140,170,0.22); border-radius: 14px; padding: 14px 16px;
-  background: color-mix(in srgb, currentColor 2%, transparent); box-shadow: 0 1px 2px rgba(15,27,45,0.04);}
-[data-testid="stMetricLabel"] p {font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.7;}
-/* tabs as a segmented control (no underline) */
-.stTabs [role="tablist"] {gap: 4px; flex-wrap: wrap; border: 1px solid rgba(120,140,170,0.25); border-radius: 14px;
-  padding: 4px; width: fit-content; max-width: 100%; background: color-mix(in srgb, currentColor 3%, transparent);
-  box-shadow: none !important;}
-.stTabs [role="tablist"]::before, .stTabs [role="tablist"]::after,
-.stTabs [data-testid="stTab"]::before, .stTabs [data-testid="stTab"]::after {display: none !important; content: none !important;}
-.stTabs [data-testid="stTab"] {height: 38px; padding: 0 16px; border-radius: 10px; border: none !important;
-  box-shadow: none !important; display: flex; align-items: center;}
-.stTabs [data-testid="stTab"] p {font-weight: 600; font-size: 0.92rem; opacity: 0.75;}
-.stTabs [data-testid="stTab"]:hover p {opacity: 1;}
-.stTabs [data-testid="stTab"][aria-selected="true"] {background: #FFFFFF; box-shadow: 0 1px 3px rgba(15,27,45,0.18) !important;}
-.stTabs [data-testid="stTab"][aria-selected="true"] p {color: #0B1C33 !important; opacity: 1;}
-.stTabs [role="tablist"] > div:not([data-testid="stTab"]) {display: none !important;}
-.stTabs .react-aria-SelectionIndicator {display: none !important;}
-[data-testid="stTabPanel"] {padding-top: 14px;}
-/* sidebar sections */
-.pl-sec {font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.55;
-  margin: 18px 0 2px 0;}
-/* navbar */
-.pl-brand {display: flex; align-items: center; gap: 12px;}
-.pl-brand img {width: 40px; height: 40px;}
-.pl-brand .n {font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1;}
-.pl-brand .s {font-size: 0.8rem; opacity: 0.6; margin-top: 3px;}
-/* market ticker */
-.pl-ticker {display: flex; gap: 26px; overflow-x: auto; white-space: nowrap; padding: 10px 2px 12px 2px;
-  border-bottom: 1px solid rgba(120,140,170,0.2); margin-bottom: 18px; font-size: 0.85rem; scrollbar-width: none;}
-.pl-ticker span.n {opacity: 0.7; margin-right: 6px;}
-.pl-ticker b {font-variant-numeric: tabular-nums; margin-right: 6px; font-weight: 700;}
-/* landing cards */
-.pl-tile {border: 1px solid rgba(120,140,170,0.25); border-radius: 16px; padding: 18px 18px 6px 18px; height: 100%;
-  background: color-mix(in srgb, currentColor 2%, transparent);}
-.pl-tile .ic {width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; font-weight: 800;
-  color: #fff; margin-bottom: 10px;}
-.pl-tile h4 {margin: 0 0 4px 0; font-size: 1.05rem;}
-.pl-tile p {opacity: 0.75; font-size: 0.9rem;}
-/* footer */
-.pl-foot {margin-top: 48px; padding: 26px 0 8px 0; border-top: 1px solid rgba(120,140,170,0.25); font-size: 0.85rem;
-  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 22px;}
-.pl-foot .h {font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.55; margin: 0 0 8px 0;}
-.pl-foot a {display: block; text-decoration: none; opacity: 0.85; margin-bottom: 4px;}
-.pl-foot .d {opacity: 0.65; line-height: 1.5;}
-@media (max-width: 800px) {.pl-foot {grid-template-columns: 1fr 1fr;}}
-h2, h3 {letter-spacing: -0.01em;}
-/* hero */
-.pl-hero {border-radius: 20px; padding: 24px 28px; margin-bottom: 18px; color: #fff;
-  background: radial-gradient(120% 140% at 100% 0%, #13a594 0%, #0e6f78 32%, #0b1c33 75%);
-  display: flex; flex-wrap: wrap; gap: 18px 40px; align-items: flex-end; justify-content: space-between;}
-.pl-hero h1 {font-size: 2.1rem; font-weight: 800; margin: 0; color: #fff; letter-spacing: -0.02em; padding: 0;}
-.pl-hero .tag {opacity: 0.85; margin-top: 4px; max-width: 46ch; font-size: 0.98rem;}
-.pl-hero .kpis {display: flex; gap: 28px; flex-wrap: wrap;}
-.pl-hero .kpi .l {font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75;}
-.pl-hero .kpi .v {font-size: 1.55rem; font-weight: 800; font-variant-numeric: tabular-nums;}
-.pl-hero .chip {display: inline-block; font-size: 0.75rem; padding: 3px 10px; border-radius: 999px;
-  background: rgba(255,255,255,0.14); margin: 8px 6px 0 0;}
-.pos {color: #0E9F6E;} .neg {color: #D64545;}
-.pl-hero .pos {color: #7CF0C5;} .pl-hero .neg {color: #FFB4B4;}
-/* empty state */
-.pl-empty {border: 1.5px dashed rgba(14,143,130,0.45); border-radius: 18px; padding: 28px; text-align: left;
-  background: color-mix(in srgb, #0E8F82 5%, transparent);}
-.pl-empty h3 {margin-top: 0;}
-.pl-card {border: 1px solid rgba(120,140,170,0.22); border-radius: 14px; padding: 14px 16px; margin-bottom: 8px;}
-.pl-badge {display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px;
-  background: rgba(14,143,130,0.12); color: #0E8F82; margin-left: 6px;}
-</style>
-""", unsafe_allow_html=True)
+# Faint candlestick texture for the page background (inline SVG: no external request).
+_CANDLES = ("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='160'>"
+            "<g stroke-width='1.2'><line x1='20' y1='30' x2='20' y2='58' stroke='%233ccb9e'/>"
+            "<line x1='64' y1='90' x2='64' y2='118' stroke='%23f0606f'/><line x1='118' y1='22' x2='118' y2='44' "
+            "stroke='%233ccb9e'/><line x1='170' y1='100' x2='170' y2='136' stroke='%23f0606f'/>"
+            "<line x1='200' y1='48' x2='200' y2='66' stroke='%233ccb9e'/></g></svg>")
+st.markdown("<style>" + (ASSETS / "style.css").read_text(encoding="utf-8").replace("__CANDLES__", _CANDLES)
+            + "</style>", unsafe_allow_html=True)
 
 # --------------------------------------------------------------------------- language
 qp_lang = st.query_params.get("lang")
@@ -202,21 +139,43 @@ def set_state(name: str, value) -> None:
         st.session_state.pop(f"{name}__{l_}", None)
 
 
+MARKETS = (("^GSPC", "S&P 500"), ("^NDX", "Nasdaq 100"), ("^STOXX50E", "Euro Stoxx 50"), ("^IBEX", "IBEX 35"),
+           ("EUNL.DE", "MSCI World"), ("^N225", "Nikkei 225"), ("GC=F", "Oro · Gold"), ("EURUSD=X", "EUR/USD"),
+           ("BTC-EUR", "Bitcoin"))
+
+
 @st.cache_data(ttl=1800, show_spinner=False)
-def market_snapshot() -> list[tuple[str, float, float]]:
-    """Last close and daily change of a few reference markets, for the ticker strip."""
+def market_snapshot() -> list[dict]:
+    """Last close, daily change and one month of closes of a few reference markets (cached 30 min)."""
+    from concurrent.futures import ThreadPoolExecutor
+
     import yfinance as yf
-    out = []
-    for sym_, name_ in (("^GSPC", "S&P 500"), ("^STOXX50E", "Euro Stoxx 50"), ("^IBEX", "IBEX 35"),
-                        ("EUNL.DE", "MSCI World"), ("^N225", "Nikkei 225"), ("GC=F", "Oro / Gold"),
-                        ("EURUSD=X", "EUR/USD"), ("BTC-EUR", "Bitcoin")):
+
+    def one(item):
+        sym_, name_ = item
         try:
-            h = yf.Ticker(sym_).history(period="7d", auto_adjust=True)["Close"].dropna()
-            if len(h) >= 2:
-                out.append((name_, float(h.iloc[-1]), float(h.iloc[-1] / h.iloc[-2] - 1)))
+            h = yf.Ticker(sym_).history(period="1mo", auto_adjust=True)["Close"].dropna()
         except Exception:
-            continue
-    return out
+            return None
+        if len(h) < 2:
+            return None
+        return {"name": name_, "last": float(h.iloc[-1]), "chg": float(h.iloc[-1] / h.iloc[-2] - 1),
+                "path": [float(v) for v in h.values]}
+
+    with ThreadPoolExecutor(max_workers=len(MARKETS)) as pool:
+        return [r for r in pool.map(one, MARKETS) if r]
+
+
+def sparkline_svg(values: list[float], up: bool) -> str:
+    """Tiny inline SVG line (server-side, no script), green if the period ended up, red otherwise."""
+    lo, hi = min(values), max(values)
+    span = (hi - lo) or 1.0
+    n = len(values) - 1 or 1
+    pts = " ".join(f"{i / n * 200:.1f},{44 - (v - lo) / span * 38:.1f}" for i, v in enumerate(values))
+    color = "#3ccb9e" if up else "#f0606f"
+    return (f"<svg viewBox='0 0 200 48' preserveAspectRatio='none'><polyline points='{pts}' fill='none' "
+            f"stroke='{color}' stroke-width='1.6' vector-effect='non-scaling-stroke' stroke-linejoin='round'/></svg>")
+
 
 RETURN_METHODS = {"long_term": "Long-term forecasts (recommended)", "bayes_stein": "Bayes-Stein shrinkage of history",
                   "historical": "Historical mean", "ewma": "Exponentially weighted mean"}
@@ -428,7 +387,7 @@ def add_position_dialog() -> None:
                                     format_func=t) or "Account"
         inst = account_instrument(name.strip() or t("Remunerated account"), tae / 100, kind) if name.strip() else None
     if inst is not None and mode != "account":
-        st.markdown(f"<div class='pl-card'><b>{inst.name}</b><span class='pl-badge'>{t(inst.kind)}</span>"
+        st.markdown(f"<div class='pl-card'><b>{html.escape(inst.name)}</b><span class='pl-badge'>{t(inst.kind)}</span>"
                     f"<span class='pl-badge'>{t(inst.asset_class)}</span><br><small>TER {inst.ter * 100:.2f} %"
                     f" · {t(inst.management)}</small></div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
@@ -728,23 +687,37 @@ def sidebar():
 cfg = sidebar()
 
 
+def _fmt_num(x: float) -> str:
+    val = f"{x:,.2f}" if x < 1000 else f"{x:,.0f}"
+    return val.replace(",", "X").replace(".", ",").replace("X", ".") if lang == "es" else val
+
+
 def render_ticker() -> None:
-    """Strip of reference markets with their daily change, like the header of a financial portal."""
+    """Scrolling strip of reference markets with their daily change, like the header of a financial portal."""
     if cfg["demo"]:
         return
     snap = market_snapshot()
     if not snap:
         return
-    items = []
-    for name_, last_, chg_ in snap:
-        cls = "pos" if chg_ >= 0 else "neg"
-        arrow = "▲" if chg_ >= 0 else "▼"
-        val = f"{last_:,.2f}" if last_ < 100 else f"{last_:,.0f}"
-        if lang == "es":
-            val = val.replace(",", "X").replace(".", ",").replace("X", ".")
-        items.append(f"<div><span class='n'>{name_}</span><b>{val}</b><span class='{cls}'>{arrow} {pct(chg_, 2)}</span>"
-                     f"</div>")
-    st.markdown(f"<div class='pl-ticker'>{''.join(items)}</div>", unsafe_allow_html=True)
+    items = "".join(
+        f"<div class='it'><span class='n'>{html.escape(m['name'])}</span><b>{_fmt_num(m['last'])}</b>"
+        f"<span class='{'pos' if m['chg'] >= 0 else 'neg'}'>{'▲' if m['chg'] >= 0 else '▼'} {pct(m['chg'], 2)}</span></div>"
+        for m in snap)
+    st.markdown(f"<div class='pl-ticker'><div class='track'>{items}{items}</div></div>", unsafe_allow_html=True)
+
+
+def render_market_cards() -> None:
+    """Grid of market cards with a one-month sparkline."""
+    snap = market_snapshot() if not cfg["demo"] else []
+    if not snap:
+        return
+    cards = "".join(
+        f"<div class='pl-mk' style='animation-delay:{i * 40}ms'><div class='t'>{html.escape(m['name'])}</div>"
+        f"<div class='v'>{_fmt_num(m['last'])}<span class='{'pos' if m['chg'] >= 0 else 'neg'}'>{pct(m['chg'], 2)}"
+        f"</span></div>{sparkline_svg(m['path'], m['path'][-1] >= m['path'][0])}</div>"
+        for i, m in enumerate(snap))
+    st.markdown(f"<div class='pl-sec' style='margin-top:30px'>{t('Markets today')} · {t('last month')}</div>"
+                f"<div class='pl-grid'>{cards}</div>", unsafe_allow_html=True)
 
 
 def render_footer() -> None:
@@ -777,27 +750,24 @@ def render_hero(kpis: list[tuple[str, str, str]] | None = None) -> None:
     k_html = "".join(f"<div class='kpi'><div class='l'>{l_}</div><div class='v {c_}'>{v_}</div></div>"
                      for l_, v_, c_ in (kpis or []))
     with hero_slot:
-        st.markdown(f"<div class='pl-hero'><div><div class='tag' style='opacity:.75;text-transform:uppercase;"
-                    f"letter-spacing:.1em;font-size:.72rem'>{t('My portfolio')}</div>"
+        st.markdown(f"<div class='pl-hero'><div><span class='eyebrow'>{t('My portfolio')}</span>"
                     f"<h1>{t('Overview')}</h1></div><div class='kpis'>{k_html}</div></div>", unsafe_allow_html=True)
 
 
 def render_landing() -> None:
     lead = t("Build your portfolio with any ETF, index or active fund, bond fund or savings account, see what you can "
              "expect at every horizon and compare it with the strategies professionals use.")
-    st.markdown(f"<h1 style='font-size:2.4rem;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px 0'>"
-                f"{t('Your investments, clearly.')}</h1><p style='font-size:1.1rem;opacity:.75;max-width:62ch'>"
-                f"{lead}</p>", unsafe_allow_html=True)
-    tiles = [("#0E8F82", "1", t("Build your portfolio"),
-              t("Add what you own, product by product, with its current value.")),
-             ("#2a78d6", "2", t("Import a file"),
+    st.markdown(f"<span class='pl-eyebrow'>{t('Portfolio management')}</span>"
+                f"<div class='pl-h1'>{t('Your investments,')} <span class='mut'>{t('clearly.')}</span></div>"
+                f"<div class='pl-lead'>{lead}</div>", unsafe_allow_html=True)
+    tiles = [("1", t("Build your portfolio"), t("Add what you own, product by product, with its current value.")),
+             ("2", t("Import a file"),
               t("Upload a CSV or Excel export from your bank or broker; columns are detected automatically.")),
-             ("#6250d6", "3", t("Explore an example"),
-              t("See every feature working with a realistic diversified portfolio."))]
+             ("3", t("Explore an example"), t("See every feature working with a realistic diversified portfolio."))]
     cols = st.columns(3)
-    for col, (color, num, title, body) in zip(cols, tiles):
-        col.markdown(f"<div class='pl-tile'><div class='ic' style='background:{color}'>{num}</div><h4>{title}</h4>"
-                     f"<p>{body}</p></div>", unsafe_allow_html=True)
+    for col, (num, title, body) in zip(cols, tiles):
+        col.markdown(f"<div class='pl-tile'><div class='ic'>{num}</div><h4>{title}</h4><p>{body}</p></div>",
+                     unsafe_allow_html=True)
     if cols[0].button(t("Add to my portfolio"), type="primary", width="stretch", key="land_add"):
         add_position_dialog()
     up_ = cols[1].file_uploader(t("Import a portfolio (CSV or Excel)"), type=["csv", "xlsx", "xls"], key="land_import",
@@ -814,6 +784,7 @@ def render_landing() -> None:
                    key="land_sample")
     st.caption(t("Tip: in the sidebar you can also pick products just to compare them, without adding them to your "
                  "portfolio."))
+    render_market_cards()
 
 
 if st.session_state.get("_import_msg"):
@@ -1241,7 +1212,7 @@ with pf_top:
         def _pl_color(v):
             if pd.isna(v):
                 return ""
-            return "color: #0E9F6E; font-weight: 600" if v >= 0 else "color: #D64545; font-weight: 600"
+            return "color: #3CCB9E; font-weight: 600" if v >= 0 else "color: #F0606F; font-weight: 600"
 
         st.dataframe(
             styled(pos, {"Value": "{:,.0f}", "Gain": "{:+,.0f}", "Gain %": "{:+.1%}"}, na_rep="-")

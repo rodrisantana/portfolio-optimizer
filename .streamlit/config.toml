@@ -1,51 +1,35 @@
-# Visual identity: navy sidebar, cool off-white canvas, teal accent (fintech look), one typeface family.
+# Visual identity inspired by serious financial portals: near-black canvas, hairline borders,
+# white segmented controls, green/red reserved for market moves, Geist typeface.
 [theme]
-font = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-headingFont = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
-headingFontWeights = [800, 700, 700, 600, 600, 600]
+base = "dark"
+font = "Geist:https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
+headingFont = "Geist:https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
+codeFont = "Geist Mono:https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap"
+headingFontWeights = [600, 600, 600, 600, 600, 600]
 baseRadius = "12px"
-buttonRadius = "10px"
-metricValueFontSize = "1.65rem"
-metricValueFontWeight = 700
+buttonRadius = "999px"
+metricValueFontSize = "1.6rem"
+metricValueFontWeight = 600
 showWidgetBorder = true
+primaryColor = "#E7E7EB"
+backgroundColor = "#141519"
+secondaryBackgroundColor = "#1A1B20"
+textColor = "#E7E7EB"
+borderColor = "#FFFFFF14"
+linkColor = "#E7E7EB"
+linkUnderline = false
+dataframeBorderColor = "#FFFFFF12"
+dataframeHeaderBackgroundColor = "#18191E"
+greenColor = "#3CCB9E"
+redColor = "#F0606F"
+blueColor = "#5E8BFF"
 
-[theme.light]
-primaryColor = "#0E8F82"
-backgroundColor = "#F4F7FB"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#0F1B2D"
-borderColor = "#DFE6EF"
-linkColor = "#0E8F82"
-dataframeHeaderBackgroundColor = "#EEF3F8"
-greenColor = "#0E9F6E"
-redColor = "#D64545"
-
-[theme.light.sidebar]
-backgroundColor = "#0B1C33"
-secondaryBackgroundColor = "#13294A"
-textColor = "#E4ECF7"
-primaryColor = "#2CC5B3"
-borderColor = "#22406A"
-linkColor = "#7FE3D6"
-
-[theme.dark]
-primaryColor = "#2CC5B3"
-backgroundColor = "#0A1220"
-secondaryBackgroundColor = "#111D30"
-textColor = "#E4ECF7"
-borderColor = "#22314A"
-linkColor = "#7FE3D6"
-dataframeHeaderBackgroundColor = "#14223A"
-greenColor = "#34D399"
-redColor = "#F87171"
-
-[theme.dark.sidebar]
-backgroundColor = "#06101F"
-secondaryBackgroundColor = "#0F1E36"
-textColor = "#E4ECF7"
-primaryColor = "#2CC5B3"
-borderColor = "#1C2E4C"
+[theme.sidebar]
+backgroundColor = "#101115"
+secondaryBackgroundColor = "#18191E"
+textColor = "#E7E7EB"
+borderColor = "#FFFFFF12"
+primaryColor = "#E7E7EB"
 
 [server]
 headless = true
